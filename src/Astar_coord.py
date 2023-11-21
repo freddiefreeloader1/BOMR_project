@@ -121,6 +121,7 @@ def create_random_coordinates(num_coordinates,max_lim):
 def search():
 
     coord = create_random_coordinates(50,10)
+    print(coord)
     start = random.choice(coord)
     end = heapq.nlargest(1,coord,key= lambda x: euclidean_distance(start,x))[0]
     
