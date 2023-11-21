@@ -60,22 +60,22 @@ class PathFollow:
             projection = None
             # Percentage on the current line
             t = (pr[0] * vecpath[0] + pr[1] * vecpath[1])/(vecpath[1]*vecpath[1] + vecpath[0]*vecpath[0])
+            # Create a bounded projection
             if(t < 0):
                 projection = p1
-                distance = np.linalg.norm(point - p1)
             elif (t>1):
-                distance = np.linalg.norm(point - p2)
+                projection = p2
             else:
-                distance = np.abs(np.cross(p2-p1, p1-point)) / np.linalg.norm(p2-p1)
+                projection = (vecpath[0]*t + p1[0], vecpath[1]*t + p1[1])
+            
+            distance = np.linalg.norm(point-projection)
             
             if distance <= best_distance:
                 best_distance = distance
                 best_index = index
-                best_projection = ((t.),t)
+                best_projection = (projection.tolist(), t)
             
-        return *best
-            
-            
+        return best_index, best_distance, best_projection
 
 
 class Robot:
@@ -86,6 +86,6 @@ class Robot:
         self.path_follower = PathFollow(path)
     
 
-robot = Robot(1,0,0,[(0,0),(1,1),(2,1)])
+robot = Robot(3,1,0,[(0,0),(1,1),(2,1)])
 print(robot.path_follower.getClosestEdge(robot.odometry))
     
