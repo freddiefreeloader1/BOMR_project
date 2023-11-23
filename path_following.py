@@ -45,6 +45,10 @@ class PathFollow:
         self.path = path
         self.path_lookahead = path_lookahead
     
+    # Return:
+    # best edge index (bounded)
+    # best distance
+    # projection from point to that edge
     def getClosestEdge(self, odometry):
         best_distance = 999999
         best_index = -1
@@ -76,7 +80,25 @@ class PathFollow:
                 best_projection = (projection.tolist(), t)
             
         return best_index, best_distance, best_projection
+    
 
+    def getLookaheadEdge(self, odometry):
+        lookahead_left = self.path_lookahead
+        current_path_index, distance, projection = self.getClosestEdge(odometry)
+        remaining_path_edges = [(p1,p2) for p1, p2 in zip(self.path[current_path_index], self.path[current_path_index+1:])]
+        point = projection[0]
+        while(lookahead_left > 0 and len(remaining_path_edges)>0):
+            curr_edge_remainder = np.linalg.norm(point-remaining_path_edges[0][1])
+            if(curr_edge_remainder <= lookahead_left):
+                lookahead_left -= curr_edge_remainder
+                point = remaining_path_edges[0][1]
+                remaining_path_edges.remove(0)
+            else:
+                point += lookahead_left*remaining_path_edges[0]/np.linalg.norm(remaining_path_edges[0])
+                lookahead_left = 0
+        
+        return point, current_path_index
+        
 
 class Robot:
     odometry = Odometry()
@@ -88,4 +110,3 @@ class Robot:
 
 robot = Robot(3,1,0,[(0,0),(1,1),(2,1)])
 print(robot.path_follower.getClosestEdge(robot.odometry))
-    
