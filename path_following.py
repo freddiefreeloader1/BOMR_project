@@ -77,7 +77,7 @@ class PathFollow:
             if distance <= best_distance:
                 best_distance = distance
                 best_index = index
-                best_projection = (projection.tolist(), t)
+                best_projection = (projection, t)
             
         return best_index, best_distance, best_projection
     
@@ -85,16 +85,18 @@ class PathFollow:
     def getLookaheadEdge(self, odometry):
         lookahead_left = self.path_lookahead
         current_path_index, distance, projection = self.getClosestEdge(odometry)
-        remaining_path_edges = [(p1,p2) for p1, p2 in zip(self.path[current_path_index], self.path[current_path_index+1:])]
-        point = projection[0]
+        remaining_path_edges = [(p1,p2) for p1, p2 in zip(self.path[current_path_index:], self.path[current_path_index+1:])]
+        print(remaining_path_edges)
+        point = np.array(projection[0])
         while(lookahead_left > 0 and len(remaining_path_edges)>0):
-            curr_edge_remainder = np.linalg.norm(point-remaining_path_edges[0][1])
+            curr_edge_remainder = np.linalg.norm(np.array(point)-remaining_path_edges[0][1])
             if(curr_edge_remainder <= lookahead_left):
                 lookahead_left -= curr_edge_remainder
                 point = remaining_path_edges[0][1]
-                remaining_path_edges.remove(0)
+                remaining_path_edges = remaining_path_edges[1:]
             else:
-                point += lookahead_left*remaining_path_edges[0]/np.linalg.norm(remaining_path_edges[0])
+                path = np.array(remaining_path_edges[0][1]) - remaining_path_edges[0][0]
+                point += (lookahead_left*(path))/np.linalg.norm(path)
                 lookahead_left = 0
         
         return point, current_path_index
@@ -106,7 +108,7 @@ class Robot:
     def __init__(self, x = 0, y = 0, angle = 0, path = [(0,0),(1,1)]):
         self.odometry = Odometry(x,y,angle)
         self.path_follower = PathFollow(path)
-    
 
-robot = Robot(3,1,0,[(0,0),(1,1),(2,1)])
+robot = Robot(0.9,1,0,[(0,0),(1,1),(2,1)])
 print(robot.path_follower.getClosestEdge(robot.odometry))
+print(robot.path_follower.getLookaheadEdge(robot.odometry))
