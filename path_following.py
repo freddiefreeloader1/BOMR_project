@@ -100,11 +100,31 @@ class PathFollow:
                 lookahead_left = 0
         
         return point, current_path_index
-        
+
+class PID:
+    p = 0
+    i = 0
+    d = 0
+    last_current = 0
+    i_sum = 0
+    def __init__(self, p, i , d):
+        self.p = p
+        self.i = i
+        self.d = d
+    def get(self, current,setpoint):
+        feedback = (setpoint - current) * self.pg - (current - self.last_current)*self.d + (self.i_sum * self.i)
+
+        i_sum += (current-self.last_current)
+        self.last_current = current
+
+        return feedback
+
 
 class Robot:
     odometry = Odometry()
     path_follower = None
+    angle_PID = PID(1,0,0)
+    
     def __init__(self, x = 0, y = 0, angle = 0, path = [(0,0),(1,1)]):
         self.odometry = Odometry(x,y,angle)
         self.path_follower = PathFollow(path)
