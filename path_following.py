@@ -6,7 +6,7 @@
 import numpy as np
 
 def get_angle_to(odometry, point):
-    return (np.arctan2(point[0]-odometry.x, point[1] - odometry.y) - odometry.angle%(2*np.pi));
+    return ((np.arctan2(point[1]-odometry.y, point[0] - odometry.x) - odometry.angle)+np.pi)%(2*np.pi)-np.pi;
 # These are classes which store data.
 class Odometry:
     x = None
@@ -131,3 +131,6 @@ class Robot:
     def __init__(self, x = 0, y = 0, angle = 0, path = [(0,0),(1,1)]):
         self.odometry = Odometry(x,y,angle)
         self.path_follower = PathFollow(path)
+
+robot = Robot(0,0,0)
+print(get_angle_to(robot.odometry,(1,0)))

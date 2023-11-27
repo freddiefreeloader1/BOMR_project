@@ -1,7 +1,7 @@
 from tdmclient import ClientAsync
 from path_following import Robot, get_angle_to
 import math
-robot = Robot(0,0,0,[(0, 0), (1, 1), (2, 1),(10,0)])
+robot = Robot(0,0,0,[(0, 0), (1, 1),(2,1),(3,3)])
 def motors(left, right):
     return {
         "motor.left.target": [left],
@@ -10,9 +10,14 @@ def motors(left, right):
 
 def steer(client,node):
     global robot
-    point, _ = robot.path_follower.getLookaheadEdge(robot.odometry)
+    point, a = robot.path_follower.getLookaheadEdge(robot.odometry)
+    #point = [1,0]
     angle = get_angle_to(robot.odometry,point)
-    node.send_set_variables(motors(int(60*angle)+100, int(-60*angle)+100))
+    #node.send_set_variables(motors(0,0))
+    print("ANGLE", "{:.2f}".format(angle), point, a,"ROBOT", "{:.2f}".format(robot.odometry.x), "{:.2f}".format(robot.odometry.y), "{:.2f}".format(robot.odometry.angle))
+    forward = 50
+    steer = 1.1
+    node.send_set_variables(motors(int(-steer*forward*angle)+forward, int(steer*forward*angle)+forward))
 
 def on_variables_changed(node, variables):
     try:
@@ -32,7 +37,7 @@ def on_variables_changed(node, variables):
         except KeyError:
             right_speed = 0
     
-        print(robot.odometry.x, robot.odometry.y, robot.odometry.angle)
+        #print(robot.odometry.x, robot.odometry.y, robot.odometry.angle)
         robot_diameter_m = 0.1
         speed_to_m = 0.01
         motor_read_freq = 100
