@@ -58,7 +58,7 @@ def main():
                     largest_contour = sorted_contours[0].squeeze()
 
                     rows = hierarchy[0].shape[0]
-                    neighbours = []
+                    neighbors = []
 
                     for i in range(rows):
                         if (hierarchy[0][i][2] == -1):
