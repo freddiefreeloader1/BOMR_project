@@ -43,6 +43,7 @@ class Stream:
 class PathFollow:
     path = None
     path_lookahead = 0.2
+    current_edge = 0
     def __init__(self, path, path_lookahead = 0.2):
         self.path = path
         self.path_lookahead = path_lookahead
@@ -55,7 +56,7 @@ class PathFollow:
         best_distance = 999999
         best_index = -1
         # iterate through the path in segments (p0, p1, 0), (p1,p2,1), ...., (pn-1, pn, n-1)
-        for i, j, index in zip(self.path, self.path[1:], range(len(self.path)-1)):
+        for i, j, index in zip(self.path[:self.current_edge+2], self.path[1: self.current_edge + 2], range(len(self.path)-1)):
             p1 = np.asarray(i)
             p2 = np.asarray(j)
             point = np.asarray((odometry.x, odometry.y))
@@ -76,6 +77,10 @@ class PathFollow:
                 projection = p2
             else:
                 projection = (vecpath[0]*t + p1[0], vecpath[1]*t + p1[1])
+
+            if( t > 0.8 and index >= self.current_edge):
+                self.current_edge += 1
+                
             
             distance = np.linalg.norm(point-projection)
             
@@ -84,7 +89,7 @@ class PathFollow:
                 best_distance = distance
                 best_index = index
                 best_projection = (projection, t)
-            
+        #print(best_distance,best_index,self.current_edge,[(a,b,c) for a,b,c in zip(self.path[:self.current_edge+2], self.path[1: self.current_edge + 2], range(len(self.path)-1))],self.path[:self.current_edge+2])
         return best_index, best_distance, best_projection
     
 

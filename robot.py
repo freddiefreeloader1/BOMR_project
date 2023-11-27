@@ -18,7 +18,7 @@ def motors(left, right):
 def steer(node, robot ,point):
     angle = get_angle_to(robot.odometry,point)
     
-    print("TARGET: {:.2f}, ROBOT: {:.2f}, {:.2f} angle - {:.2f}".format(angle,robot.odometry.x,robot.odometry.y,robot.odometry.angle))
+    print("TARGET: {:.2f}, ROBOT: {:.2f}, {:.2f} angle - {:.2f}".format(robot.path_follower.current_edge,robot.odometry.x,robot.odometry.y,robot.odometry.angle))
     # SPEED CONSTANTS
     forward_speed = 100
     steer_gain = 70
