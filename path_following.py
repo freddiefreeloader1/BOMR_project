@@ -54,19 +54,22 @@ class PathFollow:
     def getClosestEdge(self, odometry):
         best_distance = 999999
         best_index = -1
+        # iterate through the path in segments (p0, p1, 0), (p1,p2,1), ...., (pn-1, pn, n-1)
         for i, j, index in zip(self.path, self.path[1:], range(len(self.path)-1)):
             p1 = np.asarray(i)
             p2 = np.asarray(j)
             point = np.asarray((odometry.x, odometry.y))
 
+            # We assume the path starts at the origin, shift the odometry to match that space
             vecpath = p2 - p1
-            pr = np.asarray((odometry.x - p1[0], odometry.y - p1[1])) #relative point to vector
+            pr = np.asarray((odometry.x - p1[0], odometry.y - p1[1])) #relative point to vector origin
 
             distance = None
             projection = None
-            # Percentage on the current line
-            t = (pr[0] * vecpath[0] + pr[1] * vecpath[1])/(vecpath[1]*vecpath[1] + vecpath[0]*vecpath[0])
-            # Create a bounded projection
+            t = (pr[0] * vecpath[0] + pr[1] * vecpath[1])/(vecpath[1]*vecpath[1] + vecpath[0]*vecpath[0]) # Percentage on the current line
+            # Create a bounded projection:
+            # Projection is the closest point on the line to our robot.
+            #  this differs from a regular projection because our line is finite.
             if(t < 0):
                 projection = p1
             elif (t>1):
@@ -76,6 +79,7 @@ class PathFollow:
             
             distance = np.linalg.norm(point-projection)
             
+            # If better than the current best, update it
             if distance <= best_distance:
                 best_distance = distance
                 best_index = index
