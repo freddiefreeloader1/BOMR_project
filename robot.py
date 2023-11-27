@@ -1,12 +1,18 @@
 from tdmclient import ClientAsync
-from path_following import Robot
+from path_following import Robot, get_angle_to
 import math
-robot = Robot(0,0,0,[(0, 0), (1, 1), (2, 1)])
+robot = Robot(0,0,0,[(0, 0), (1, 1), (2, 1),(10,0)])
 def motors(left, right):
     return {
         "motor.left.target": [left],
         "motor.right.target": [right],
     }
+
+def steer(client,node):
+    global robot
+    point, _ = robot.path_follower.getLookaheadEdge(robot.odometry)
+    angle = get_angle_to(robot.odometry,point)
+    node.send_set_variables(motors(int(60*angle)+100, int(-60*angle)+100))
 
 def on_variables_changed(node, variables):
     try:
@@ -34,7 +40,7 @@ def on_variables_changed(node, variables):
         robot.odometry.x += (math.cos(robot.odometry.angle)*speed_to_m*(left_speed + right_speed)/2)/motor_read_freq
         robot.odometry.y += (math.sin(robot.odometry.angle)*speed_to_m*(left_speed + right_speed)/2)/motor_read_freq #speed in cm to robot pos in meters
         dtheta = (right_speed - left_speed) * speed_to_m / robot_diameter_m
-        robot.odometry.angle += dtheta / motor_read_freq # TODO %2PI
+        robot.odometry.angle = (robot.odometry.angle + dtheta / motor_read_freq) % (2*math.pi)
     except KeyError:
         pass  # motors not updated
 
@@ -44,6 +50,7 @@ with ClientAsync() as client:
             await node.watch(variables=True)
             node.add_variables_changed_listener(on_variables_changed)
             while True:
+                steer(client,node)
                 await client.sleep(0.05)
     
     client.run_async_program(prog)

@@ -5,6 +5,8 @@
 # womp womp i use numpy :/
 import numpy as np
 
+def get_angle_to(odometry, point):
+    return (np.arctan2(point[0]-odometry.x, point[1] - odometry.y) - odometry.angle%(2*np.pi));
 # These are classes which store data.
 class Odometry:
     x = None
@@ -86,7 +88,7 @@ class PathFollow:
         lookahead_left = self.path_lookahead
         current_path_index, distance, projection = self.getClosestEdge(odometry)
         remaining_path_edges = [(p1,p2) for p1, p2 in zip(self.path[current_path_index:], self.path[current_path_index+1:])]
-        print(remaining_path_edges)
+
         point = np.array(projection[0])
         while(lookahead_left > 0 and len(remaining_path_edges)>0):
             curr_edge_remainder = np.linalg.norm(np.array(point)-remaining_path_edges[0][1])
@@ -96,6 +98,7 @@ class PathFollow:
                 remaining_path_edges = remaining_path_edges[1:]
             else:
                 path = np.array(remaining_path_edges[0][1]) - remaining_path_edges[0][0]
+                point = [float(point[0]), float(point[1])]
                 point += (lookahead_left*(path))/np.linalg.norm(path)
                 lookahead_left = 0
         
