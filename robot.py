@@ -1,7 +1,9 @@
 from tdmclient import ClientAsync
 from path_following import Robot, get_angle_to
 import math
-robot = Robot(0,0,0,[(0, 0), (1, 1),(2,1),(3,3)])
+robot = Robot(0,0,0,[(0, 0), (1, 1),(2,1),(3,3),(0,3)])
+state = 0
+state_timer = 0
 
 ### ---- HELPER FUNCTIONS FOR THYMIO ---- ###
 def motors(left, right):
@@ -16,7 +18,7 @@ def motors(left, right):
 def steer(node, robot ,point):
     angle = get_angle_to(robot.odometry,point)
     
-    print("TARGET: {:.2f}, {} ROBOT: {:.2f}, {:,2f} angle - {:.2f}".format(angle,point,robot.odometry.x,robot.odometry.y,robot.odometry.angle))
+    print("TARGET: {:.2f}, ROBOT: {:.2f}, {:.2f} angle - {:.2f}".format(angle,robot.odometry.x,robot.odometry.y,robot.odometry.angle))
     # SPEED CONSTANTS
     forward_speed = 100
     steer_gain = 70
@@ -25,11 +27,38 @@ def steer(node, robot ,point):
     steer = steer_gain * angle
     node.send_set_variables(motors(int(-steer + forward_speed ), int( steer + forward_speed)))
 
+def steer_danger(node,robot):
+    prox = node.v.prox.horizontal
+    # STEER CONSTANTS
+    speed = 100
+    obst_gain = 6
+    node.send_set_variables(motors(speed + obst_gain * (prox[0] // 100),speed + obst_gain * (prox[4] // 100)))
+
 # Async sensor reading update
 def on_variables_changed(node, variables):
     try:
-        #TODO: proximity values
-        pass
+        global state, state_timer
+        #Proximity has been updated
+        prox = variables["prox.horizontal"]
+        # PROXIMITY CONSTANTS
+        obstL = 10
+        obstH = 20
+        STATE_COOLDOWN = 10
+        print(prox[0],prox[4],state,state_timer)
+        # handle states
+        if(prox[0] > obstH or prox[4] > obstH):
+            if(state == 0):
+                state_timer = STATE_COOLDOWN
+            state = 1
+        
+        elif(prox[0] < obstL and prox[4] < obstL):
+            if(state == 1):
+                state_timer = STATE_COOLDOWN
+            if(STATE_COOLDOWN <= 0):
+                state = 0
+
+        
+
     except KeyError:
         pass  # prox.horizontal not updated
 
@@ -43,7 +72,8 @@ def on_variables_changed(node, variables):
             right_speed = variables["motor.right.speed"][0]
         except KeyError:
             right_speed = 0
-    
+            if(left_speed == 0):
+                raise KeyError  #if neither was updated, skip
         #ODOMETRY CONSTANTS
         robot_diameter_m = 0.1
         speed_to_m = 0.01
@@ -59,7 +89,7 @@ def on_variables_changed(node, variables):
 
 with ClientAsync() as client:
     async def prog():
-        global robot
+        global robot, state, state_timer
         with await client.lock() as node:
             #Set up listener functions
             await node.watch(variables=True)
@@ -67,10 +97,15 @@ with ClientAsync() as client:
             while True:
                 # path follow loop:
 
-                point = await robot.path_follower.getLookaheadEdge(robot.odometry)
-
-                steer(node, robot, point)
-
+                point, _ = robot.path_follower.getLookaheadEdge(robot.odometry)
+                if(state == 0):
+                    steer(node, robot, point)
+                elif(state == 1):
+                    steer_danger(node,robot)
+                state_timer -= 1
+                if(state_timer < 0):
+                    state = 0
+                
                 await client.sleep(0.05)
     
     client.run_async_program(prog)

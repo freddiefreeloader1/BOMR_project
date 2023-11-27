@@ -131,6 +131,3 @@ class Robot:
     def __init__(self, x = 0, y = 0, angle = 0, path = [(0,0),(1,1)]):
         self.odometry = Odometry(x,y,angle)
         self.path_follower = PathFollow(path)
-
-robot = Robot(0,0,0)
-print(get_angle_to(robot.odometry,(1,0)))
