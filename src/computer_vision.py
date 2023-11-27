@@ -1,5 +1,7 @@
 import cv2 
-import numpy as np 
+import numpy as np
+
+from Astar_coord import *
 
 def sort_map_points(pts):
     sorted_points = sorted(pts, key=lambda x: x[0])
@@ -9,38 +11,98 @@ def sort_map_points(pts):
 
     return np.float32([left[0], right[0], left[1], right[1]])
 
-def get_map_region_of_interest(frame, coord_to_transform):
-    img_height = frame.shape[0]
-    roi_height = np.linalg.norm(coord_to_transform[0] - coord_to_transform[1])
-    roi_width = np.linalg.norm(coord_to_transform[0] - coord_to_transform[3])
-
-    aspect_ratio = roi_width / roi_height
-
-    map_width = int(img_height * aspect_ratio)
-    map_height = img_height
-
-    return map_width, map_height
-
 def preprocess_image(frame):
     bilateral_img = cv2.bilateralFilter(frame, 9, 50, 50)
     bw_img = cv2.cvtColor(bilateral_img, cv2.COLOR_BGR2GRAY)
-    blur = cv2.GaussianBlur(bw_img, (5, 5), 0)
-    binary_img = cv2.Canny(blur, 100, 100)
-    binary_img = cv2.GaussianBlur(binary_img, (7, 7), 0)
+    #blur = cv2.GaussianBlur(bw_img, (5, 5), 0)
+    blur = cv2.medianBlur(bw_img, 13)
+    #binary_img = cv2.Canny(blur, 100, 100)
+    _, binary_img = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    #binary_img = cv2.GaussianBlur(binary_img, (3, 3), 0)
     return binary_img
+
+def capture_map_data(frame, binary_img, map_width, map_height):
+    try:
+        contours, _ = cv2.findContours(binary_img.copy(), cv2.RETR_EXTERNAL , cv2.CHAIN_APPROX_SIMPLE)
+        if not contours:
+            return False, None, None
+
+        sorted_contours = sorted(contours, key=cv2.contourArea, reverse=True)
+        largest_contour = sorted_contours[0].squeeze()
+
+        epsilon_map = 0.02 * cv2.arcLength(largest_contour, True)
+        approx_map = cv2.approxPolyDP(largest_contour, epsilon_map, True)
+
+        if approx_map.shape[0] != 4:
+            print("The map is not found!")
+            return False, None, None
+
+        coord_to_transform = sort_map_points(approx_map.squeeze())
+        pts2 = np.float32([[0, 0], [map_width, 0], [0, map_height], [map_width, map_height]])
+        M = cv2.getPerspectiveTransform(coord_to_transform, pts2)
+        map_img = cv2.warpPerspective(frame, M, (map_width, map_height))
+
+        return True, coord_to_transform, map_img, pts2
+
+    except Exception as e:
+        print("Error: ", e)
+        return False, None, None
+
+def capture_obstacle_data(map_img, padding):
+    gray_map_img = preprocess_image(map_img)
+    obstacle_contours, hierarchy = cv2.findContours(gray_map_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+    if not obstacle_contours:
+        return []
+
+    neighbors = []
+    for i, contour in enumerate(obstacle_contours):
+        if hierarchy[0][i][2] != -1:
+            continue
+
+        if cv2.contourArea(contour, True) < 0:
+            continue
+
+        cv2.drawContours(map_img, obstacle_contours, i, (255, 255, 0), 3)
+        epsilon_obstacle = 0.02 * cv2.arcLength(contour, True)
+        approx_obstacle = cv2.approxPolyDP(contour, epsilon_obstacle, True)
+        centroid = np.mean(approx_obstacle, axis=0)
+
+        for point in approx_obstacle:
+            new_point = calculate_new_point(point, centroid, padding)
+            if new_point is not None:
+                neighbors.append(tuple(new_point))
+
+    return neighbors
+
+def calculate_new_point(point, centroid, padding):
+    original_point = point[0]
+    vector = original_point - centroid[0]
+    norm = np.linalg.norm(vector)
+
+    if norm == 0 or np.any(np.isnan(vector / norm)):
+        return None
+
+    return original_point + padding * (vector / norm)
+
+def draw_path(map_img, path):
+    for i in range(len(path) - 1):
+        start = tuple(int(val) for val in path[i])
+        end = tuple(int(val) for val in path[i + 1])
+        cv2.line(map_img, start, end, (0, 255, 0), 2)
 
 def main():
     cap = cv2.VideoCapture(0)
-    capture_map = False
-    capture_data = False
-    map_width, map_height = 0, 0
-    padding = 30
-    neighbors = []
+    capture_data, capture_map, capture_obstacle = False, False, False
+    max_width, max_height = 891, 1260
+    padding = 50
     coord_to_transform = []
+    pts2 = []
+    neighbors = []
+    path = []
 
     while True:
         ret, frame = cap.read()
-        map_img = frame.copy()
 
         if not ret:
             print("Unable to capture video")
@@ -49,82 +111,34 @@ def main():
         binary_img = preprocess_image(frame)
 
         if capture_data:
-            try:
-                contours, hierarchy = cv2.findContours(binary_img.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+            capture_map, coord_to_transform, map_img, pts2 = capture_map_data(frame, binary_img, max_width, max_height)
+            capture_data = False
+            capture_obstacle = not capture_map
 
-                if len(contours) > 0:
-                    sorted_contours = sorted(contours, key=cv2.contourArea, reverse=True)
+        if capture_map and not capture_obstacle:
+            neighbors = capture_obstacle_data(map_img, padding)
+            if neighbors:
+                start, end = neighbors[1], neighbors[6]
+                path = astar(neighbors, start, end)
 
-                    largest_contour = sorted_contours[0].squeeze()
+                print('--- Path Info ---\n', f'Path length: {len(path)}\n', neighbors, start, end, f'Path: {path}')
 
-                    rows = hierarchy[0].shape[0]
-                    neighbors = []
+                capture_obstacle = True
+                capture_map = False
 
-                    for i in range(rows):
-                        if (hierarchy[0][i][2] == -1):
-                            currentContour = contours[i]
-
-                            contour_area = cv2.contourArea(currentContour, True)
-                            if contour_area < 0:
-                                continue
-
-                            cv2.drawContours(map_img, contours, i, (255, 255, 0), 3)
-
-                            epsilon_obstacle = 0.02 * cv2.arcLength(currentContour, True)
-                            approx_obstacle = cv2.approxPolyDP(currentContour, epsilon_obstacle, True)
-
-                            centroid = np.mean(approx_obstacle, axis=0)
-
-                            for point in approx_obstacle:
-                                original_point = point[0]
-                                vector = original_point - centroid[0]
-
-                                norm = np.linalg.norm(vector)
-
-                                if norm == 0:
-                                    continue
-
-                                direction = vector / norm
-                                new_point = original_point + padding * direction
-
-                                if np.any(np.isnan(new_point)):
-                                    continue
-                                
-                                neighbors.append(new_point.tolist())
-
-                    epsilon_map = 0.02 * cv2.arcLength(largest_contour, True)
-                    approx_map = cv2.approxPolyDP(largest_contour, epsilon_map, True)
-
-                    if approx_map.shape[0] == 4:
-                        coord_to_transform = sort_map_points(approx_map.squeeze())
-                        map_width, map_height = get_map_region_of_interest(map_img, coord_to_transform)
-
-                        print(len(neighbors))
-
-                        capture_data = False
-                        capture_map = True
-                    else:
-                        print("The map is not found!")
-            except Exception as e:
-                print("Error: ", e)
-
-        ''' Show images'''
-        cv2.imshow('Original image', frame)
-        # cv2.imshow('Binary image', binary_img)
-
-        if capture_map:
+        if capture_obstacle:
+            M = cv2.getPerspectiveTransform(coord_to_transform, pts2)
+            map_img = cv2.warpPerspective(frame, M, (max_width, max_height))
+            
             for point in neighbors:
                 point_int = tuple(int(val) for val in point)
-                cv2.circle(frame, point_int, 5, (0, 0, 255), -1)
+                cv2.circle(map_img, point_int, 5, (0, 0, 255), -1)
 
-            pts2 = np.float32([[0, 0], [map_width, 0], [0, map_height], [map_width, map_height]])
+            draw_path(map_img, path)
+            map_img = cv2.rotate(map_img, cv2.ROTATE_90_CLOCKWISE)
+            cv2.imshow('Map', map_img)
 
-            M = cv2.getPerspectiveTransform(coord_to_transform, pts2)
-            frame = cv2.warpPerspective(frame, M, (map_width, map_height))
-
-            cv2.imshow('Map', frame)
-
-        ''' Handle keyboard input'''
+        cv2.imshow('Original image', frame)
         key = cv2.waitKey(24)
 
         if key == ord('q'):
@@ -132,7 +146,7 @@ def main():
             break
         elif key == ord('p'):
             print("Capturing map...")
-            capture_data = True
+            capture_data, capture_map, capture_obstacle = True, False, False
 
     cap.release()
     cv2.destroyAllWindows()
