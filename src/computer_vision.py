@@ -34,8 +34,8 @@ def main():
     capture_map = False
     capture_data = False
     map_width, map_height = 0, 0
-    padding = 20
-    neighbours = []
+    padding = 30
+    neighbors = []
     coord_to_transform = []
 
     while True:
@@ -64,9 +64,8 @@ def main():
                         if (hierarchy[0][i][2] == -1):
                             currentContour = contours[i]
 
-                            contour_area = cv2.contourArea(currentContour)
-
-                            if contour_area < 10:
+                            contour_area = cv2.contourArea(currentContour, True)
+                            if contour_area < 0:
                                 continue
 
                             cv2.drawContours(map_img, contours, i, (255, 255, 0), 3)
@@ -91,7 +90,7 @@ def main():
                                 if np.any(np.isnan(new_point)):
                                     continue
                                 
-                                neighbours.append(new_point.tolist())
+                                neighbors.append(new_point.tolist())
 
                     epsilon_map = 0.02 * cv2.arcLength(largest_contour, True)
                     approx_map = cv2.approxPolyDP(largest_contour, epsilon_map, True)
@@ -100,7 +99,7 @@ def main():
                         coord_to_transform = sort_map_points(approx_map.squeeze())
                         map_width, map_height = get_map_region_of_interest(map_img, coord_to_transform)
 
-                        print(len(neighbours))
+                        print(len(neighbors))
 
                         capture_data = False
                         capture_map = True
@@ -114,7 +113,7 @@ def main():
         # cv2.imshow('Binary image', binary_img)
 
         if capture_map:
-            for point in neighbours:
+            for point in neighbors:
                 point_int = tuple(int(val) for val in point)
                 cv2.circle(frame, point_int, 5, (0, 0, 255), -1)
 
