@@ -96,9 +96,9 @@ def draw_path(map_img, path):
         end = tuple(int(val) for val in path[i + 1])
         cv2.line(map_img, start, end, (0, 255, 0), 2)
 
-def detect_goal(map_img):
+def detect_goal(map_img, template_size=(200, 200)):
     template = cv2.imread('../assets/images/goal.jpeg')
-    template = cv2.resize(template, (200, 200))
+    template = cv2.resize(template, template_size)
 
     map_img_gray = cv2.cvtColor(map_img, cv2.COLOR_BGR2GRAY)
     template_gray = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
@@ -128,11 +128,13 @@ def main():
     path = []
 
     while True:
-        ret, frame = cap.read()
+        # ret, frame = cap.read()
+        frame = cv2.imread('../assets/images/map.jpg')
+        frame = cv2.resize(frame, (900, 600))
 
-        if not ret:
-            print("Unable to capture video")
-            break
+        # if not ret:
+        #     print("Unable to capture video")
+        #     break
 
         binary_img = preprocess_image(frame)
 
@@ -147,12 +149,13 @@ def main():
                 
                 if neighbors:
                     start = neighbors[1]
-                    end = detect_goal(map_img)
+                    #end = detect_goal(map_img)
 
-                    neighbors.append(end)
+                    #neighbors.append(end)
+                    end = neighbors[6]
                     path = astar(neighbors, start, end)
 
-                    print('--- Path Info ---\n', f'Path length: {len(path)}\n', neighbors, start, end, f'Path: {path}')
+                    # print('--- Path Info ---\n', f'Path length: {len(path)}\n', neighbors, start, end, f'Path: {path}')
 
                     capture_obstacle = True
                     capture_map = False
@@ -163,7 +166,7 @@ def main():
 
                 draw_neighbours(map_img, neighbors)
                 draw_path(map_img, path)
-                draw_goal(map_img, end)
+                #draw_goal(map_img, end)
 
                 map_img = cv2.rotate(map_img, cv2.ROTATE_90_CLOCKWISE)
                 cv2.imshow('Map', map_img)
