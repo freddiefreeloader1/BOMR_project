@@ -1,6 +1,17 @@
 from tdmclient import ClientAsync
-from path_following import Robot, get_angle_to
+from path_following import get_angle_to, Odometry,PathFollow,PID
+from kalman import Kalman
+
 import math
+class Robot:
+    odometry = Odometry()
+    path_follower = None
+    angle_PID = PID(1,0,0)
+
+    def __init__(self, x = 0, y = 0, angle = 0, path = [(0,0),(1,1)]):
+        self.odometry = Odometry(x,y,angle)
+        self.path_follower = PathFollow(path)
+
 robot = Robot(0,0,0,[(0, 0), (1, 0),(1,1),(3,1)])
 state = 0
 state_timer = 0
