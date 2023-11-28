@@ -1,7 +1,7 @@
 from tdmclient import ClientAsync
 from path_following import Robot, get_angle_to
 import math
-robot = Robot(0,0,0,[(0, 0), (1, 1),(2,1),(3,3),(0,3)])
+robot = Robot(0,0,0,[(0, 0), (1, 0),(1,1),(3,1)])
 state = 0
 state_timer = 0
 
@@ -20,8 +20,8 @@ def steer(node, robot ,point):
     
     print("TARGET: {:.2f}, ROBOT: {:.2f}, {:.2f} angle - {:.2f}".format(robot.path_follower.current_edge,robot.odometry.x,robot.odometry.y,robot.odometry.angle))
     # SPEED CONSTANTS
-    forward_speed = 100
-    steer_gain = 70
+    forward_speed = 250
+    steer_gain = 150
     steer_max = 70
 
     steer = steer_gain * angle
@@ -30,9 +30,12 @@ def steer(node, robot ,point):
 def steer_danger(node,robot):
     prox = node.v.prox.horizontal
     # STEER CONSTANTS
-    speed = 100
-    obst_gain = 6
-    node.send_set_variables(motors(speed + obst_gain * (prox[0] // 100),speed + obst_gain * (prox[4] // 100)))
+    speed = 200
+    obst_gain = 12
+    obst_stop = 15
+
+    back = (prox[2]//100) * obst_stop
+    node.send_set_variables(motors(speed + obst_gain * (prox[0] // 100) - back,speed + obst_gain * (prox[4] // 100) - back))
 
 # Async sensor reading update
 def on_variables_changed(node, variables):
@@ -44,15 +47,15 @@ def on_variables_changed(node, variables):
         obstL = 10
         obstH = 20
         STATE_COOLDOWN = 10
-        print(prox[0],prox[4],state,state_timer)
+       # print(prox[0],prox[4],state,state_timer)
         # handle states
         if(prox[0] > obstH or prox[4] > obstH):
-            if(state == 0):
+            if(state == 1):
                 state_timer = STATE_COOLDOWN
             state = 1
         
         elif(prox[0] < obstL and prox[4] < obstL):
-            if(state == 1):
+            if(state == 0):
                 state_timer = STATE_COOLDOWN
             if(STATE_COOLDOWN <= 0):
                 state = 0
@@ -75,7 +78,7 @@ def on_variables_changed(node, variables):
             if(left_speed == 0):
                 raise KeyError  #if neither was updated, skip
         #ODOMETRY CONSTANTS
-        robot_diameter_m = 0.1
+        robot_diameter_m = 0.25
         speed_to_m = 0.01
         motor_read_freq = 100
 
@@ -106,6 +109,9 @@ with ClientAsync() as client:
                 if(state_timer < 0):
                     state = 0
                 
+                if(robot.path_follower.current_edge >= len(robot.path_follower.path)-1):
+                    await node.set_variables(motors(0,0))
+                    break
                 await client.sleep(0.05)
     
     client.run_async_program(prog)
