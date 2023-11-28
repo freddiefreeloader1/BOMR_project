@@ -94,7 +94,7 @@ def astar(coords, start, end, method):
         if method == "circle":
             closest_neighbors = neighbors_in_circle(current_node.position, neighbors, 3)
         elif method == "closest_n":
-            closest_neighbors = find_closest_neighbors(current_node.position, neighbors, 4)
+            closest_neighbors = find_closest_neighbors(current_node.position, neighbors, 7)
 
         if closest_neighbors == []:
             print("Increase the diameter value")
@@ -120,22 +120,22 @@ def create_random_coordinates(num_coordinates,max_lim):
 
 def search():
 
-    coord = create_random_coordinates(50,10)
+    coord = create_random_coordinates(20,2000)
     print(coord)
     start = random.choice(coord)
     end = heapq.nlargest(1,coord,key= lambda x: euclidean_distance(start,x))[0]
     
-    astar_time_circle = timeit.timeit(lambda: astar(coord, start, end,"circle"), number=1)
+    # astar_time_circle = timeit.timeit(lambda: astar(coord, start, end,"circle"), number=1)
     astar_time_closest_n = timeit.timeit(lambda: astar(coord, start, end,"circle"), number=1)
-    print(f"Total running time for circle method: {astar_time_circle * 10**3:.3f} ms")
+    #print(f"Total running time for circle method: {astar_time_circle * 10**3:.3f} ms")
     print(f"Total running time for closest n method: {astar_time_closest_n * 10**3:.3f} ms")
 
-    path1 = astar(coord, start, end, "circle")
+    # path1 = astar(coord, start, end, "circle")
     path2 = astar(coord, start, end, "closest_n")
-    if path1 and path2:
+    if path2:
         '''print("Path found:", path1)
         print("Path found:", path2)'''
-        plot_path(coord, path1)
+        # plot_path(coord, path1)
         plot_path(coord, path2)
     else:
         print("No path found.")
