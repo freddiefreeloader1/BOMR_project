@@ -32,10 +32,11 @@ def steer_danger(node,robot):
     # STEER CONSTANTS
     speed = 200
     obst_gain = 12
+    obst_rescind = 4
     obst_stop = 15
 
     back = (prox[2]//100) * obst_stop
-    node.send_set_variables(motors(speed + obst_gain * (prox[0] // 100) - back,speed + obst_gain * (prox[4] // 100) - back))
+    node.send_set_variables(motors(speed + obst_gain * (prox[0] // 100) - back - obst_rescind * (prox[4]//100),speed + obst_gain * (prox[4] // 100) - back - obst_rescind * (prox[0]//100)))
 
 # Async sensor reading update
 def on_variables_changed(node, variables):
