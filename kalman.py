@@ -1,17 +1,25 @@
 class Kalman:
-    p = 0
-    i = 0
-    d = 0
-    last_current = 0
-    i_sum = 0
-    def __init__(self, p, i , d):
-        self.p = p
-        self.i = i
-        self.d = d
-    def get(self, current,setpoint):
-        feedback = (setpoint - current) * self.pg - (current - self.last_current)*self.d + (self.i_sum * self.i)
 
-        i_sum += (current-self.last_current)
-        self.last_current = current
+    def __init__(self):
+        pass
 
-        return feedback
+    def get():
+        return None
+    
+    # Update the accelerometor readings from the robot
+    def update_acceleration(data, time):
+        pass
+
+    # Update the change in heading from the last update
+    # (defacto, this is calculated using the wheel speeds)
+    def update_spin(data, time):
+        pass
+    
+    # Update the absolute reading of the robots angle in the world
+    def update_heading(data, time):
+        pass
+
+    # Update the absolute position of the robot in the world
+    def update_position(data, time):
+        pass
+   
