@@ -1,3 +1,14 @@
+import numpy as np
+from filterpy.kalman import KalmanFilter
+
+# This function takes a body's reading and angle
+def change_frame(body_data,body_orientation):
+    R = np.array([[np.cos(body_orientation), -np.sin(body_orientation)],
+                  [np.sin(body_orientation), np.cos(body_orientation)]])
+    accel_local = R.dot(body_data)
+    return accel_local
+
+
 class Kalman:
 
     def __init__(self):
