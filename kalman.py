@@ -30,7 +30,9 @@ class Kalman:
     def get_position(self):
         return self.kf_pos.x.T[0:1]
     
-    def _compute_kf_pos(self,data,noise, dt):
+    def _compute_kf_pos(self,data, dt):
+        noise = self.NOISE_ACCEL # most dominant solution
+        
         self.kf_pos.F = np.array([[1,0,dt,0,0.5*dt**2,0],
                      [0,1,0,dt,0,0.5*dt**2],
                      [0,0,1,0,dt,0],
@@ -62,10 +64,11 @@ class Kalman:
         data = change_frame(data, rotation)
 
         # Update kf parameters for multiplication
-        self.kf_pos.H = np.array([[0,0,0,0,1,0]])
+        self.kf_pos.H = np.array([[0,0,0,0,1,0],
+                                  [0,0,0,0,0,1]])
         self.kf_pos.R = (self.NOISE_ACCEL**2)*np.eye(2)
 
-        self._compute_kf_pos(data,self.NOISE_ACCEL,dt)
+        self._compute_kf_pos(data,dt)
         
 
 
@@ -85,9 +88,17 @@ class Kalman:
 
     # Update the absolute position of the robot in the world
     def update_position(self, data, time):
-        dt = time - self.time_pos
+        
+        # calculate time since last measurement and update it
+        dt = time- self.time_pos
         self.time_pos = time
-        pass
+
+        # Update kf parameters for multiplication
+        self.kf_pos.H = np.array([[1,0,0,0,0,0],
+                                  [0,1,0,0,0,0]])
+        self.kf_pos.R = (self.NOISE_POS**2)*np.eye(2)
+
+        self._compute_kf_pos(data,dt)
 
 kalman = Kalman()
 
