@@ -3,14 +3,26 @@ from path_following import get_angle_to, Odometry,PathFollow,PID
 from kalman import Kalman
 
 import math
+
+#TODO get time
+def get_time():
+    return 0
+
 class Robot:
     odometry = Odometry()
     path_follower = None
     angle_PID = PID(1,0,0)
+    kalman = None
 
     def __init__(self, x = 0, y = 0, angle = 0, path = [(0,0),(1,1)]):
         self.odometry = Odometry(x,y,angle)
         self.path_follower = PathFollow(path)
+        self.kalman = Kalman([x,y],angle,[0,0],[0,0],0,get_time())
+
+
+    def update_odometry(self):
+        self.odometry.x, self.odometry.y = self.kalman.get_position()
+        self.odometry.angle = self.kalman.get_rotation()
 
 robot = Robot(0,0,0,[(0, 0), (1, 0),(1,1),(3,1)])
 state = 0
@@ -90,15 +102,15 @@ def on_variables_changed(node, variables):
             if(left_speed == 0):
                 raise KeyError  #if neither was updated, skip
         #ODOMETRY CONSTANTS
-        robot_diameter_m = 0.25
-        speed_to_m = 0.01
-        motor_read_freq = 100
+        ROBOT_DIAMETER = 0.25
+        ENCODER_TO_MPS = 0.01
+        MOTOR_READ_FREQ = 100
 
         #Update Odometry:
-        robot.odometry.x += (math.cos(robot.odometry.angle)*speed_to_m*(left_speed + right_speed)/2)/motor_read_freq
-        robot.odometry.y += (math.sin(robot.odometry.angle)*speed_to_m*(left_speed + right_speed)/2)/motor_read_freq #speed in cm to robot pos in meters
-        dtheta = (right_speed - left_speed) * speed_to_m / robot_diameter_m
-        robot.odometry.angle = (robot.odometry.angle + dtheta / motor_read_freq) % (2*math.pi)
+        dtheta = (right_speed - left_speed) * ENCODER_TO_MPS / ROBOT_DIAMETER
+
+        robot.kalman.update_spin(data=dtheta,time=get_time())
+        
     except KeyError:
         pass  # motors not updated
 
@@ -110,6 +122,9 @@ with ClientAsync() as client:
             await node.watch(variables=True)
             node.add_variables_changed_listener(on_variables_changed)
             while True:
+                # Update odometry:
+                robot.update_odometry()
+
                 # path follow loop:
 
                 point, _ = robot.path_follower.getLookaheadEdge(robot.odometry)
