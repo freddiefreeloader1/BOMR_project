@@ -1,11 +1,11 @@
 import cv2 
 import numpy as np
+from ultralytics import YOLO
 
 from Astar_coord import *
 
 def sort_map_points(pts):
     sorted_points = sorted(pts, key=lambda x: x[0])
-
     left = sorted(sorted_points[:2], key=lambda x: x[1])
     right = sorted(sorted_points[2:], key=lambda x: x[1])
 
@@ -55,13 +55,20 @@ def capture_obstacle_data(map_img, padding):
     if not obstacle_contours:
         return []
 
-    neighbors = []
+    obstacle_masks = []
+    nodes = []
+    unreachable_nodes = {}
+
     for i, contour in enumerate(obstacle_contours):
         if hierarchy[0][i][2] != -1:
             continue
 
         if cv2.contourArea(contour, True) < 0:
             continue
+
+        mask = np.zeros_like(gray_map_img)
+        cv2.drawContours(mask, [contour], -1, 255, -1)
+        obstacle_masks.append(mask)
 
         cv2.drawContours(map_img, obstacle_contours, i, (255, 255, 0), 3)
         epsilon_obstacle = 0.02 * cv2.arcLength(contour, True)
@@ -71,9 +78,33 @@ def capture_obstacle_data(map_img, padding):
         for point in approx_obstacle:
             new_point = calculate_new_point(point, centroid, padding)
             if new_point is not None:
-                neighbors.append(tuple(new_point))
+                tuple_new_point = tuple(new_point)
+                nodes.append(tuple_new_point)
+                unreachable_nodes[tuple_new_point] = []
 
-    return neighbors
+        for node in unreachable_nodes.keys():
+            for neighbor in nodes:
+                if node == neighbor:
+                    continue
+
+                if neighbor in unreachable_nodes[node]:
+                    continue
+
+                if not is_reachable(node, neighbor, obstacle_masks, map_img):
+                    unreachable_nodes[node].append(neighbor)
+
+    return unreachable_nodes
+
+def is_reachable(node, neighbor, obstacle_masks, map_img):
+    line_img = np.zeros_like(obstacle_masks[0])
+    node_int = tuple(int(val) for val in node)
+    neighbor_int = tuple(int(val) for val in neighbor)
+    cv2.line(line_img, node_int, neighbor_int, 255, 3)
+
+    for mask in obstacle_masks:
+        if np.any(cv2.bitwise_and(line_img, mask)):
+            return False
+    return True
 
 def calculate_new_point(point, centroid, padding):
     original_point = point[0]
@@ -85,8 +116,8 @@ def calculate_new_point(point, centroid, padding):
 
     return original_point + padding * (vector / norm)
 
-def draw_neighbours(map_img, neighbors):
-    for point in neighbors:
+def draw_nodes(map_img, nodes):
+    for point in nodes:
         point_int = tuple(int(val) for val in point)
         cv2.circle(map_img, point_int, 5, (0, 0, 255), -1)
 
@@ -95,6 +126,16 @@ def draw_path(map_img, path):
         start = tuple(int(val) for val in path[i])
         end = tuple(int(val) for val in path[i + 1])
         cv2.line(map_img, start, end, (0, 255, 0), 2)
+
+def draw_unreachable_nodes(map_img, unreachable_nodes):
+    color = (0, 0, 255)
+    for node, neighbors in unreachable_nodes.items():
+        node_int = tuple(int(val) for val in node)
+        cv2.circle(map_img, node_int, 5, color, -1)
+
+        for neighbor in neighbors:
+            neighbor_int = tuple(int(val) for val in neighbor)
+            cv2.line(map_img, node_int, neighbor_int, color, 2)
 
 def detect_goal(map_img, template_size=(200, 200)):
     template = cv2.imread('../assets/images/goal.jpeg')
@@ -113,28 +154,65 @@ def detect_goal(map_img, template_size=(200, 200)):
 
     return (pt[0] + w // 2, pt[1] + h // 2)
 
+def detect_thymio(map_img, model):
+    results = model(map_img, stream=True)
+
+    for r in results:
+        boxes = r.boxes
+
+        for box in boxes:
+            _, _, w, h = box.xywh[0]
+            w, h = int(w), int(h)
+
+            x1, y1, x2, y2 = box.xyxy[0]
+            x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
+
+            center = (x1 + (w // 2), y1 + (h // 2))
+
+            cv2.circle(map_img, center, 7, (0, 255, 255), -1)
+            cv2.rectangle(map_img, (x1, y1), (x2, y2), (255, 0, 255), 3)
+
+            confidence = math.ceil((box.conf[0] * 100)) / 100
+            print("Confidence --->",confidence)
+
+            # object details
+            org = [x1, y1]
+            font = cv2.FONT_HERSHEY_SIMPLEX
+            fontScale = 1
+            color = (255, 255, 0)
+            thickness = 2
+
+            cv2.putText(map_img, 'Thymio', org, font, fontScale, color, thickness)
+
 
 def draw_goal(map_img, end):
     cv2.circle(map_img, end, 7, (255, 0, 0), -1)
 
 def main():
     cap = cv2.VideoCapture(0)
+
+    # Map and obstacle detection
     capture_data, capture_map, capture_obstacle = False, False, False
     max_width, max_height = 891, 1260
     padding = 50
     coord_to_transform = []
     pts2 = []
-    neighbors = []
+
+    # Global navigation
+    unreachable_nodes = {}
     path = []
 
-    while True:
-        # ret, frame = cap.read()
-        frame = cv2.imread('../assets/images/map.jpg')
-        frame = cv2.resize(frame, (900, 600))
+    # Thymio detection
+    thymio_detected = False
+    thymio_coordinates = (0, 0)
+    model = YOLO("./runs/detect/train/weights/best.pt")
 
-        # if not ret:
-        #     print("Unable to capture video")
-        #     break
+    while True:
+        ret, frame = cap.read()
+
+        if not ret:
+            print("Unable to capture video")
+            break
 
         binary_img = preprocess_image(frame)
 
@@ -145,28 +223,29 @@ def main():
                 capture_obstacle = not capture_map
 
             if capture_map and not capture_obstacle:
-                neighbors = capture_obstacle_data(map_img, padding)
+                unreachable_nodes = capture_obstacle_data(map_img, padding)
+                print('--- Unreachable Nodes ---\n', unreachable_nodes)
                 
-                if neighbors:
-                    start = neighbors[1]
-                    #end = detect_goal(map_img)
+                ## =========== Change star, end point here to try Astar =========== ##
+                # A* Algorithm
+                # start = (0,0)
+                # end = (0,0)
+                # path = Astar(start, end, unreachable_nodes)
 
-                    #neighbors.append(end)
-                    end = neighbors[6]
-                    path = astar(neighbors, start, end)
+                capture_obstacle = True
+                capture_map = False
 
-                    # print('--- Path Info ---\n', f'Path length: {len(path)}\n', neighbors, start, end, f'Path: {path}')
-
-                    capture_obstacle = True
-                    capture_map = False
+            if thymio_detected:
+                detect_thymio(map_img, model)
 
             if capture_obstacle:
                 M = cv2.getPerspectiveTransform(coord_to_transform, pts2)
                 map_img = cv2.warpPerspective(frame, M, (max_width, max_height))
 
-                draw_neighbours(map_img, neighbors)
+                draw_nodes(map_img, list(unreachable_nodes.keys()))
                 draw_path(map_img, path)
-                #draw_goal(map_img, end)
+                # draw_unreachable_nodes(map_img, unreachable_nodes)
+                # draw_goal(map_img, end)
 
                 map_img = cv2.rotate(map_img, cv2.ROTATE_90_CLOCKWISE)
                 cv2.imshow('Map', map_img)
@@ -180,6 +259,11 @@ def main():
             elif key == ord('p'):
                 print("Capturing map...")
                 capture_data, capture_map, capture_obstacle = True, False, False
+                thymio_detected = False
+            elif key == ord('o'):
+                print('Detecting Thymio...')
+                thymio_detected = True
+
         except Exception as e:
             print("Error: ", e)
             continue
