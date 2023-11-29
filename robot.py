@@ -114,6 +114,14 @@ def on_variables_changed(node, variables):
     except KeyError:
         pass  # motors not updated
 
+    try:
+        acc = variables["acc"]
+        global robot
+        
+        robot.kalman.update_acceleration(data=acc[0:1],time=get_time())
+    except KeyError:
+        pass # acceleration not updated
+
 with ClientAsync() as client:
     async def prog():
         global robot, state, state_timer
