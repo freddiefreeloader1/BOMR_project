@@ -98,7 +98,7 @@ def capture_obstacle_data(map_img, padding):
 def is_reachable(node, neighbor, obstacle_masks, map_img):
     line_img = np.zeros_like(obstacle_masks[0])
     node_int = tuple(int(val) for val in node)
-    neighbor_int = tuple(int(val) for val in neighbor)
+    neighbor_int = tuple(int(val) + 100 for val in neighbor)
     cv2.line(line_img, node_int, neighbor_int, 255, 3)
 
     for mask in obstacle_masks:
@@ -231,7 +231,7 @@ def main():
                 # A* Algorithm
                 start = list(unreachable_nodes.keys())[9]
                 # end = heapq.nlargest(1,list(unreachable_nodes.keys()),key= lambda x: euclidean_distance(start,x))[0]
-                end = list(unreachable_nodes.keys())[24]
+                end = list(unreachable_nodes.keys())[22]
                 path = astar(unreachable_nodes, start, end)
 
                 capture_obstacle = True

@@ -96,7 +96,7 @@ def astar(coords, start, end, method = "closest_n"):
             closest_neighbors = neighbors_in_circle(current_node.position, neighbors, 3)'''
 
         if method == "closest_n":
-            closest_neighbors = find_closest_neighbors(current_node.position, neighbors, 4)
+            closest_neighbors = find_closest_neighbors(current_node.position, neighbors, 3)
 
         if closest_neighbors == []:
             print("Increase the diameter value")
