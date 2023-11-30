@@ -90,7 +90,7 @@ def capture_obstacle_data(map_img, padding):
                 if neighbor in unreachable_nodes[node]:
                     continue
 
-                if not is_reachable(node, neighbor, obstacle_masks, map_img):
+                if is_reachable(node, neighbor, obstacle_masks, map_img):
                     unreachable_nodes[node].append(neighbor)
 
     return unreachable_nodes
@@ -190,7 +190,7 @@ def draw_goal(map_img, end):
 
 def main():
     cap = cv2.VideoCapture(0)
-
+    
     # Map and obstacle detection
     capture_data, capture_map, capture_obstacle = False, False, False
     max_width, max_height = 891, 1260
@@ -205,14 +205,15 @@ def main():
     # Thymio detection
     thymio_detected = False
     thymio_coordinates = (0, 0)
-    model = YOLO("./runs/detect/train/weights/best.pt")
+    model = YOLO("./src/runs/detect/train/weights/best.pt")
 
     while True:
-        ret, frame = cap.read()
-
-        if not ret:
+        # ret, frame = cap.read()
+        frame = cv2.imread("./assets/images/map.jpg")
+        frame = cv2.resize(frame, (900,600))
+        '''if not ret:
             print("Unable to capture video")
-            break
+            break'''
 
         binary_img = preprocess_image(frame)
 
@@ -224,13 +225,14 @@ def main():
 
             if capture_map and not capture_obstacle:
                 unreachable_nodes = capture_obstacle_data(map_img, padding)
-                print('--- Unreachable Nodes ---\n', unreachable_nodes)
+                # print('--- Unreachable Nodes ---\n', unreachable_nodes)
                 
                 ## =========== Change star, end point here to try Astar =========== ##
                 # A* Algorithm
-                # start = (0,0)
-                # end = (0,0)
-                # path = Astar(start, end, unreachable_nodes)
+                start = list(unreachable_nodes.keys())[9]
+                # end = heapq.nlargest(1,list(unreachable_nodes.keys()),key= lambda x: euclidean_distance(start,x))[0]
+                end = list(unreachable_nodes.keys())[24]
+                path = astar(unreachable_nodes, start, end)
 
                 capture_obstacle = True
                 capture_map = False
@@ -248,6 +250,7 @@ def main():
                 # draw_goal(map_img, end)
 
                 map_img = cv2.rotate(map_img, cv2.ROTATE_90_CLOCKWISE)
+                map_img = cv2.resize(map_img, (900,600))
                 cv2.imshow('Map', map_img)
 
             cv2.imshow('Original image', frame)

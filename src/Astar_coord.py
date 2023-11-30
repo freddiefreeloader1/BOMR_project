@@ -62,7 +62,7 @@ def find_closest_neighbors(coord, coords, num_neighbors):
 def neighbors_in_circle(center, coords, diameter):
     return [coord for coord in coords if euclidean_distance(center, coord) <= diameter]
 
-def astar(coords, start, end, method):
+def astar(coords, start, end, method = "closest_n"):
     start_node = Node(None, start)
     start_node.cost_of_move = start_node.heuristic = start_node.total_cost = 0.0
 
@@ -87,14 +87,16 @@ def astar(coords, start, end, method):
 
         neighbors = [
             (x, y)
-            for x, y in coords
-            if (x, y) not in closed_set and (x, y) != current_node.position
+            for x, y in list(coords[current_node.position])
+            if ((x, y) not in closed_set and (x, y) != current_node.position
+            )
         ]
 
-        if method == "circle":
-            closest_neighbors = neighbors_in_circle(current_node.position, neighbors, 3)
-        elif method == "closest_n":
-            closest_neighbors = find_closest_neighbors(current_node.position, neighbors, 7)
+        '''if method == "circle":
+            closest_neighbors = neighbors_in_circle(current_node.position, neighbors, 3)'''
+
+        if method == "closest_n":
+            closest_neighbors = find_closest_neighbors(current_node.position, neighbors, 4)
 
         if closest_neighbors == []:
             print("Increase the diameter value")
@@ -102,7 +104,7 @@ def astar(coords, start, end, method):
 
         children = [
             Node(current_node, neighbor)
-            for neighbor in closest_neighbors
+            for neighbor in neighbors
         ]
 
         for child in children:
