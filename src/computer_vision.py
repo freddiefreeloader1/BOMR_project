@@ -1,9 +1,6 @@
-import cv2 
+import cv2
+import cv2.aruco as aruco
 import numpy as np
-from ultralytics import YOLO
-
-from Astar_coord import *
-from Astar import *
 
 def sort_map_points(pts):
     sorted_points = sorted(pts, key=lambda x: x[0])
@@ -15,11 +12,16 @@ def sort_map_points(pts):
 def preprocess_image(frame):
     bilateral_img = cv2.bilateralFilter(frame, 9, 50, 50)
     bw_img = cv2.cvtColor(bilateral_img, cv2.COLOR_BGR2GRAY)
-    #blur = cv2.GaussianBlur(bw_img, (5, 5), 0)
-    blur = cv2.medianBlur(bw_img, 13)
-    #binary_img = cv2.Canny(blur, 100, 100)
-    _, binary_img = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-    #binary_img = cv2.GaussianBlur(binary_img, (3, 3), 0)
+    #blur = cv2.GaussianBlur(bw_img, (3, 3), 0)
+    blur = cv2.medianBlur(bw_img, 15)
+    binary_img = cv2.Canny(bw_img, 50, 100)
+    #_, binary_img = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    binary_img = cv2.GaussianBlur(binary_img, (3, 3), 0)
+
+    #cv2.imshow('Bilateral image', bilateral_img)
+    #cv2.imshow('BW image', bw_img)
+    #cv2.imshow('Binary image', binary_img)
+
     return binary_img
 
 def capture_map_data(frame, binary_img, map_width, map_height):
@@ -67,13 +69,16 @@ def capture_obstacle_data(map_img, padding):
         if cv2.contourArea(contour, True) < 0:
             continue
 
+        epsilon_obstacle = 0.02 * cv2.arcLength(contour, True)
+        approx_obstacle = cv2.approxPolyDP(contour, epsilon_obstacle, True)
+
+        if approx_obstacle.shape[0] > 5:
+            continue
+
         mask = np.zeros_like(gray_map_img)
         cv2.drawContours(mask, [contour], -1, 255, -1)
         obstacle_masks.append(mask)
 
-        cv2.drawContours(map_img, obstacle_contours, i, (255, 255, 0), 3)
-        epsilon_obstacle = 0.02 * cv2.arcLength(contour, True)
-        approx_obstacle = cv2.approxPolyDP(contour, epsilon_obstacle, True)
         centroid = np.mean(approx_obstacle, axis=0)
 
         for point in approx_obstacle:
@@ -117,10 +122,14 @@ def calculate_new_point(point, centroid, padding):
 
     return original_point + padding * (vector / norm)
 
-def draw_nodes(map_img, nodes):
+def draw_reachable_nodes(map_img, nodes):
     for point in nodes:
         point_int = tuple(int(val) for val in point)
         cv2.circle(map_img, point_int, 5, (0, 0, 255), -1)
+
+def draw_node(map_img, position, color, radius=9):
+    if position is not None:
+        cv2.circle(map_img, position, radius, color, -1)
 
 def draw_path(map_img, path):
     for i in range(len(path) - 1):
@@ -137,57 +146,6 @@ def draw_unreachable_nodes(map_img, unreachable_nodes):
         for neighbor in neighbors:
             neighbor_int = tuple(int(val) for val in neighbor)
             cv2.line(map_img, node_int, neighbor_int, color, 2)
-
-def detect_goal(map_img, template_size=(200, 200)):
-    template = cv2.imread('../assets/images/goal.jpeg')
-    template = cv2.resize(template, template_size)
-
-    map_img_gray = cv2.cvtColor(map_img, cv2.COLOR_BGR2GRAY)
-    template_gray = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
-
-    res = cv2.matchTemplate(map_img_gray, template_gray, cv2.TM_CCOEFF_NORMED)
-    threshold = 0.7
-    loc = np.where(res >= threshold)
-
-    w, h = template_gray.shape[::-1]
-    for pt in zip(*loc[::-1]):
-        cv2.circle(map_img, (pt[0] + w // 2, pt[1] + h // 2), 3, (255, 0, 0), -1)
-
-    return (pt[0] + w // 2, pt[1] + h // 2)
-
-def detect_thymio(map_img, model):
-    results = model(map_img, stream=True)
-
-    for r in results:
-        boxes = r.boxes
-
-        for box in boxes:
-            _, _, w, h = box.xywh[0]
-            w, h = int(w), int(h)
-
-            x1, y1, x2, y2 = box.xyxy[0]
-            x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
-
-            center = (x1 + (w // 2), y1 + (h // 2))
-
-            cv2.circle(map_img, center, 7, (0, 255, 255), -1)
-            cv2.rectangle(map_img, (x1, y1), (x2, y2), (255, 0, 255), 3)
-
-            confidence = math.ceil((box.conf[0] * 100)) / 100
-            print("Confidence --->",confidence)
-
-            # object details
-            org = [x1, y1]
-            font = cv2.FONT_HERSHEY_SIMPLEX
-            fontScale = 1
-            color = (255, 255, 0)
-            thickness = 2
-
-            cv2.putText(map_img, 'Thymio', org, font, fontScale, color, thickness)
-
-
-def draw_goal(map_img, end):
-    cv2.circle(map_img, end, 7, (255, 0, 0), -1)
 
 def create_grid(map_img, obstacle_masks, cell_size):
     map_height, map_width = map_img.shape[:2]
@@ -214,9 +172,7 @@ def create_grid(map_img, obstacle_masks, cell_size):
                 print(f"IndexError: {e}")
     return grid
 
-
 def draw_grid_on_map(map_img, grid, cell_size):
-    
     grid_map = map_img.copy()
     color = (0, 0, 255)
     color_grid = (0,255,0) 
@@ -236,14 +192,11 @@ def draw_grid_on_map(map_img, grid, cell_size):
 
     return grid_map
 
-
 def draw_grid_path(map_img, grid, path, cell_size):
-    
     grid_path = map_img.copy()
     color = (0, 0, 255)
     color_grid = (255,255,0) 
     
-
     for row in range(grid.shape[0]):
         for col in range(grid.shape[1]):
             if (col,row) in path: 
@@ -275,114 +228,45 @@ def transform_grid_to_metric(path, map_height, map_width, grid):
     grid_x = len(grid[0])
     grid_y = len(grid)
     for x,y in path:
-        metric_path.append(((x*map_width)/grid_x, -(y*map_height)/grid_y))
+        metric_path.append(((x * map_width) / grid_x, -(y * map_height) / grid_y))
 
     return metric_path
 
-def main():
-    cap = cv2.VideoCapture(0)
-    
-    # Map and obstacle detection
-    capture_data, capture_map, capture_obstacle = False, False, False
-    max_width, max_height = 891, 1260
-    padding = 50
-    coord_to_transform = []
-    pts2 = []
+def get_goal_position(map_img):
+    hsv_img = cv2.cvtColor(map_img, cv2.COLOR_BGR2HSV)
 
-    # Global navigation
-    unreachable_nodes = {}
-    path = []
+    lower_red = np.array([160, 100, 20], dtype="uint8")
+    upper_red = np.array([180, 255, 255], dtype="uint8")
 
-    # Thymio detection
-    thymio_detected = False
-    thymio_coordinates = (0, 0)
-    model = YOLO("./src/runs/detect/train/weights/best.pt")
+    mask = cv2.inRange(hsv_img, lower_red, upper_red)
+    mask = cv2.medianBlur(mask, 7)
 
-    while True:
-        # ret, frame = cap.read()
-        frame = cv2.imread("./assets/images/map.jpg")
-        frame = cv2.resize(frame, (900,600))
-        '''if not ret:
-            print("Unable to capture video")
-            break'''
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-        binary_img = preprocess_image(frame)
+    if not contours:
+        return None
 
-        try:
-            if capture_data:
-                capture_map, coord_to_transform, map_img, pts2 = capture_map_data(frame, binary_img, max_width, max_height)
-                capture_data = False
-                capture_obstacle = not capture_map
+    (x, y), _ = cv2.minEnclosingCircle(contours[0])
 
-            if capture_map and not capture_obstacle:
-                unreachable_nodes, obstacle_masks = capture_obstacle_data(map_img, padding)
-                # print('--- Unreachable Nodes ---\n', unreachable_nodes)
-                
-                ## =========== Change star, end point here to try Astar =========== ##
-                # A* Algorithm
-                start = list(unreachable_nodes.keys())[9]
-                # end = heapq.nlargest(1,list(unreachable_nodes.keys()),key= lambda x: euclidean_distance(start,x))[0]
-                end = list(unreachable_nodes.keys())[24]
-                path = astar(unreachable_nodes, start, end)
+    return (int(x), int(y))
 
-                capture_obstacle = True
-                capture_map = False
-                # grid based A*
-                bw_map = cv2.cvtColor(map_img.copy(), cv2.COLOR_BGR2GRAY)
-                cell_size = 20  
-                grid = create_grid(bw_map, obstacle_masks, cell_size)
-                print("Grid:\n", grid)
-                # be careful, the origin is at the top right corner, and the positive x is downward, and positive y is left 
-                # coordinates in (x,y)
-                start_grid = (0, 0) 
-                end_grid = (40, 60)
-                path_grid = astar_grid(grid, start_grid, end_grid, moves_8n)
-                simplified_path = simplify_path(path_grid)
-                metric_path = transform_grid_to_metric(simplified_path, 420, 297, grid)
-                print("simplified path is: \n", simplified_path)
-                print("metric path is: \n", metric_path)
-                
+def get_thymio_position(map_img):
+    dictionary = aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
+    markerCorners, markerIds, rejectedCandidates = aruco.detectMarkers(map_img, dictionary)
+    thymio_position = None
 
-            if thymio_detected:
-                detect_thymio(map_img, model)
+    if markerIds is not None:
+        for i, corner in enumerate(markerCorners):
+            try:
+                aruco.drawDetectedMarkers(map_img, markerCorners)
+                thymio_position = corner[0].mean(axis=0)
+                # print(f"Marker ID: {markerIds[i]} Position (x, y): {thymio_position}")
+            except Exception as e:
+                print(f"Error: {e}")
+                return None
 
-            if capture_obstacle:
-                M = cv2.getPerspectiveTransform(coord_to_transform, pts2)
-                map_img = cv2.warpPerspective(frame, M, (max_width, max_height))
+    return thymio_position
 
-                draw_nodes(map_img, list(unreachable_nodes.keys()))
-                # draw_path(map_img, path)
-                # draw_unreachable_nodes(map_img, unreachable_nodes)
-                # draw_goal(map_img, end)
-
-                map_img = draw_grid_on_map(map_img, grid, cell_size)
-                map_img = draw_grid_path(map_img, grid, path_grid, cell_size)
-                # map_img = cv2.rotate(map_img, cv2.ROTATE_90_CLOCKWISE)
-                map_img = cv2.resize(map_img, (420,297))
-
-                cv2.imshow('Map', map_img)
-
-            cv2.imshow('Original image', frame)
-            key = cv2.waitKey(24)
-
-            if key == ord('q'):
-                print("Quitting...")
-                break
-            elif key == ord('p'):
-                print("Capturing map...")
-                capture_data, capture_map, capture_obstacle = True, False, False
-                thymio_detected = False
-            elif key == ord('o'):
-                print('Detecting Thymio...')
-                thymio_detected = True
-
-        except Exception as e:
-            print("Error: ", e)
-            continue
-
-    cap.release()
-    cv2.destroyAllWindows()
-    cv2.waitKey(1)
-
-if __name__ == "__main__":
-    main()
+def draw_thymio_position(map_img, thymio_position):
+    if thymio_position is not None:
+        draw_node(map_img, (int(thymio_position[0]), int(thymio_position[1])), (255, 0, 0), 9)
