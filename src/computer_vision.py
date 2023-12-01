@@ -3,6 +3,7 @@ import numpy as np
 from ultralytics import YOLO
 
 from Astar_coord import *
+from Astar import *
 
 def sort_map_points(pts):
     sorted_points = sorted(pts, key=lambda x: x[0])
@@ -93,7 +94,7 @@ def capture_obstacle_data(map_img, padding):
                 if is_reachable(node, neighbor, obstacle_masks, map_img):
                     unreachable_nodes[node].append(neighbor)
 
-    return unreachable_nodes
+    return unreachable_nodes, obstacle_masks
 
 def is_reachable(node, neighbor, obstacle_masks, map_img):
     line_img = np.zeros_like(obstacle_masks[0])
@@ -188,6 +189,70 @@ def detect_thymio(map_img, model):
 def draw_goal(map_img, end):
     cv2.circle(map_img, end, 7, (255, 0, 0), -1)
 
+def create_grid(map_img, obstacle_masks, cell_size):
+    map_height, map_width = map_img.shape[:2]
+    grid_rows = int(np.ceil(map_height / cell_size))
+    grid_cols = int(np.ceil(map_width / cell_size))
+
+    grid = np.zeros((grid_rows, grid_cols), dtype=int)
+    final_obstacle_map = np.zeros_like(map_img)
+
+    for obstacle_mask in obstacle_masks:
+        final_obstacle_map |= obstacle_mask
+
+    for row in range(grid_rows):
+        for col in range(grid_cols):
+            y_start, y_end = row * cell_size, (row + 1) * cell_size
+            x_start, x_end = col * cell_size, (col + 1) * cell_size
+            try:
+                obstacle_mask_new = final_obstacle_map[y_start:y_end, x_start:x_end]
+
+                if np.any((obstacle_mask_new > 0)):
+                    grid[row][col] = 1
+
+            except IndexError as e:
+                print(f"IndexError: {e}")
+    return grid
+
+
+def draw_grid_on_map(map_img, grid, cell_size):
+    
+    grid_map = map_img.copy()
+    color = (0, 0, 255)
+    color_grid = (0,255,0) 
+    
+    for x in range(0, grid_map.shape[1], cell_size):
+        cv2.line(grid_map, (x, 0), (x, grid_map.shape[0]), color, 1)
+
+    for y in range(0, grid_map.shape[0], cell_size):
+        cv2.line(grid_map, (0, y), (grid_map.shape[1], y), color, 1)
+
+    for row in range(grid.shape[0]):
+        for col in range(grid.shape[1]):
+            if grid[row, col] == 1: 
+                x_start, x_end = col * cell_size, (col + 1) * cell_size
+                y_start, y_end = row * cell_size, (row + 1) * cell_size
+                cv2.rectangle(grid_map, (x_start, y_start), (x_end, y_end), color_grid, -1)
+
+    return grid_map
+
+
+def draw_grid_path(map_img, grid, path, cell_size):
+    
+    grid_path = map_img.copy()
+    color = (0, 0, 255)
+    color_grid = (255,255,0) 
+    
+
+    for row in range(grid.shape[0]):
+        for col in range(grid.shape[1]):
+            if (col,row) in path: 
+                x_start, x_end = col * cell_size, (col + 1) * cell_size
+                y_start, y_end = row * cell_size, (row + 1) * cell_size
+                cv2.rectangle(grid_path, (x_start, y_start), (x_end, y_end), color_grid, -1)
+
+    return grid_path
+
 def main():
     cap = cv2.VideoCapture(0)
     
@@ -224,7 +289,7 @@ def main():
                 capture_obstacle = not capture_map
 
             if capture_map and not capture_obstacle:
-                unreachable_nodes = capture_obstacle_data(map_img, padding)
+                unreachable_nodes, obstacle_masks = capture_obstacle_data(map_img, padding)
                 # print('--- Unreachable Nodes ---\n', unreachable_nodes)
                 
                 ## =========== Change star, end point here to try Astar =========== ##
@@ -236,6 +301,16 @@ def main():
 
                 capture_obstacle = True
                 capture_map = False
+                bw_map = cv2.cvtColor(map_img.copy(), cv2.COLOR_BGR2GRAY)
+                cell_size = 20  
+                grid = create_grid(bw_map, obstacle_masks, cell_size)
+                print("Grid:\n", grid)
+                # be careful, the origin is at the top right corner, and the positive x is downward, and positive y is left 
+                start_grid = (40, 30) 
+                end_grid = (0, 61)
+                path_grid = astar_grid(grid, start_grid, end_grid, moves_8n)
+                
+                
 
             if thymio_detected:
                 detect_thymio(map_img, model)
@@ -245,10 +320,13 @@ def main():
                 map_img = cv2.warpPerspective(frame, M, (max_width, max_height))
 
                 draw_nodes(map_img, list(unreachable_nodes.keys()))
-                draw_path(map_img, path)
+                # draw_path(map_img, path)
                 # draw_unreachable_nodes(map_img, unreachable_nodes)
                 # draw_goal(map_img, end)
+                # draw_path(map_img, path_grid)
 
+                map_img = draw_grid_on_map(map_img, grid, cell_size)
+                map_img = draw_grid_path(map_img, grid, path_grid, cell_size)
                 map_img = cv2.rotate(map_img, cv2.ROTATE_90_CLOCKWISE)
                 map_img = cv2.resize(map_img, (900,600))
                 cv2.imshow('Map', map_img)
