@@ -253,6 +253,32 @@ def draw_grid_path(map_img, grid, path, cell_size):
 
     return grid_path
 
+def simplify_path(path):
+    simplified_path = [path[0]] 
+
+    for i in range(1, len(path) - 1):
+        current_point = np.array(path[i])
+        next_point = np.array(path[i + 1])
+        direction_vector = next_point - np.array(simplified_path[-1])
+        
+        if np.cross(direction_vector, current_point - np.array(simplified_path[-1])) == 0:
+            continue  
+
+        simplified_path.append(path[i]) 
+
+    simplified_path.append(path[-1])
+
+    return simplified_path
+
+def transform_grid_to_metric(path, map_height, map_width, grid):
+    metric_path = []
+    grid_x = len(grid[0])
+    grid_y = len(grid)
+    for x,y in path:
+        metric_path.append(((x*map_width)/grid_x, -(y*map_height)/grid_y))
+
+    return metric_path
+
 def main():
     cap = cv2.VideoCapture(0)
     
@@ -301,15 +327,20 @@ def main():
 
                 capture_obstacle = True
                 capture_map = False
+                # grid based A*
                 bw_map = cv2.cvtColor(map_img.copy(), cv2.COLOR_BGR2GRAY)
                 cell_size = 20  
                 grid = create_grid(bw_map, obstacle_masks, cell_size)
                 print("Grid:\n", grid)
                 # be careful, the origin is at the top right corner, and the positive x is downward, and positive y is left 
-                start_grid = (40, 30) 
-                end_grid = (0, 61)
+                # coordinates in (x,y)
+                start_grid = (0, 0) 
+                end_grid = (40, 60)
                 path_grid = astar_grid(grid, start_grid, end_grid, moves_8n)
-                
+                simplified_path = simplify_path(path_grid)
+                metric_path = transform_grid_to_metric(simplified_path, 420, 297, grid)
+                print("simplified path is: \n", simplified_path)
+                print("metric path is: \n", metric_path)
                 
 
             if thymio_detected:
@@ -323,12 +354,12 @@ def main():
                 # draw_path(map_img, path)
                 # draw_unreachable_nodes(map_img, unreachable_nodes)
                 # draw_goal(map_img, end)
-                # draw_path(map_img, path_grid)
 
                 map_img = draw_grid_on_map(map_img, grid, cell_size)
                 map_img = draw_grid_path(map_img, grid, path_grid, cell_size)
-                map_img = cv2.rotate(map_img, cv2.ROTATE_90_CLOCKWISE)
-                map_img = cv2.resize(map_img, (900,600))
+                # map_img = cv2.rotate(map_img, cv2.ROTATE_90_CLOCKWISE)
+                map_img = cv2.resize(map_img, (420,297))
+
                 cv2.imshow('Map', map_img)
 
             cv2.imshow('Original image', frame)
