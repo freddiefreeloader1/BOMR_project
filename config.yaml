@@ -1,6 +1,0 @@
-path: /Users/adrianaorellana/Documents/Master/Mobile Robotics/BOMR_project/assets/dataset # path to the dataset folder, change it
-train: images
-val: images
-
-nc: 1
-names: ["thymio"]
