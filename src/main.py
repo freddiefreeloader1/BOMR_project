@@ -3,11 +3,11 @@ from Astar_coord import *
 from Astar import * 
 
 def main():
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(1)
     
     # Map and obstacle detection variables
     capture_data, setup_finished = False, False
-    max_width, max_height = 891, 1260
+    max_width, max_height = 1170, 735
     padding = 50
     coord_to_transform = []
     pts2 = []
@@ -18,8 +18,8 @@ def main():
     start = None
     end = None
     cell_size = 20
-    start_grid = (0, 0) 
-    end_grid = (40, 60)
+    start_grid = () 
+    end_grid = ()
     grid = np.array([])
     path_grid = np.array([])
 
@@ -62,24 +62,21 @@ def main():
                 
                 if plan_path:
                     start = thymio_position
-
                     ''' Path planning '''
-                    bw_map = cv2.cvtColor(map_img.copy(), cv2.COLOR_BGR2GRAY)
-                    grid = create_grid(bw_map, obstacle_masks, cell_size)
-                    print("Grid:\n", grid)
-                    path_grid = astar_grid(grid, start_grid, end_grid, moves_8n)
-                    simplified_path = simplify_path(path_grid)
-                    metric_path = transform_grid_to_metric(simplified_path, 600, 400, grid)
-                    
+                    # 297 x 420 millimetres for a3
+                    # map_img = cv2.resize(map_img, (1260, 891))
+                    grid, path_grid, simplified_path, metric_path = make_path(map_img, obstacle_masks, cell_size, start, end, grid, max_width, max_height)
+                    print(metric_path)
+
                     plan_path = False
 
                 draw_node(map_img, start, (0, 73, 255)) # <- Start node
                 draw_reachable_nodes(map_img, list(unreachable_nodes.keys()))
                 draw_node(map_img, end, (0, 255, 0)) # <- End node
-
+ 
                 map_img = draw_grid_on_map(map_img, grid, cell_size)
                 map_img = draw_grid_path(map_img, grid, path_grid, cell_size)
-                #map_img = cv2.resize(map_img, (600, 400))
+                map_img = cv2.resize(map_img, (600, 400))
 
                 cv2.imshow('Map', map_img)
 

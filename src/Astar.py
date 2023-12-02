@@ -1,8 +1,8 @@
 import heapq
 import timeit
-
+import cv2
 import matplotlib.pyplot as plt
-
+from computer_vision import * 
 import numpy as np
 import random
 
@@ -220,6 +220,45 @@ def print_maze(maze):
 
         print(" ".join(map(str, row)))
 
+
+def simplify_path(path):
+    simplified_path = [path[0]] 
+
+    for i in range(1, len(path) - 1):
+        current_point = np.array(path[i])
+        next_point = np.array(path[i + 1])
+        direction_vector = next_point - np.array(simplified_path[-1])
+        
+        if np.cross(direction_vector, current_point - np.array(simplified_path[-1])) == 0:
+            continue  
+
+        simplified_path.append(path[i]) 
+
+    simplified_path.append(path[-1])
+
+    return simplified_path
+
+def make_path(map_img, obstacle_masks, cell_size, start, end, grid, map_x = 600, map_y = 400):
+    
+    bw_map = cv2.cvtColor(map_img.copy(), cv2.COLOR_BGR2GRAY)
+    grid = create_grid(bw_map, obstacle_masks, cell_size)
+    start_grid = (grid.shape[1] * start[0] // map_img.shape[1], grid.shape[0] * start[1] // map_img.shape[0])
+    end_grid = (grid.shape[1] * end[0] // map_img.shape[1], grid.shape[0] * end[1] // map_img.shape[0])
+    path_grid = astar_grid(grid, start_grid, end_grid, moves_8n)
+    simplified_path = simplify_path(path_grid)
+    metric_path = transform_grid_to_metric(simplified_path, map_x, map_y, grid)
+
+    return grid, path_grid, simplified_path, metric_path
+
+
+def transform_grid_to_metric(path, map_width, map_height, grid):
+    metric_path = []
+    grid_x = grid.shape[1]
+    grid_y = grid.shape[0]
+    for x,y in path:
+        metric_path.append(((x * map_width) / grid_x, (y * map_height) / grid_y))
+
+    return metric_path
 
 
 def search():

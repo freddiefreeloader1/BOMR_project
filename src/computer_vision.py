@@ -18,6 +18,8 @@ def preprocess_image(frame):
     #_, binary_img = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     binary_img = cv2.GaussianBlur(binary_img, (3, 3), 0)
 
+    cv2.imshow("binary img", binary_img)
+
     return binary_img
 
 def capture_map_data(frame, binary_img, map_width, map_height):
@@ -206,31 +208,9 @@ def draw_grid_path(map_img, grid, path, cell_size):
 
     return grid_path
 
-def simplify_path(path):
-    simplified_path = [path[0]] 
 
-    for i in range(1, len(path) - 1):
-        current_point = np.array(path[i])
-        next_point = np.array(path[i + 1])
-        direction_vector = next_point - np.array(simplified_path[-1])
-        
-        if np.cross(direction_vector, current_point - np.array(simplified_path[-1])) == 0:
-            continue  
 
-        simplified_path.append(path[i]) 
 
-    simplified_path.append(path[-1])
-
-    return simplified_path
-
-def transform_grid_to_metric(path, map_height, map_width, grid):
-    metric_path = []
-    grid_x = len(grid[0])
-    grid_y = len(grid)
-    for x,y in path:
-        metric_path.append(((x * map_width) / grid_x, -(y * map_height) / grid_y))
-
-    return metric_path
 
 def get_goal_position(map_img):
     hsv_img = cv2.cvtColor(map_img, cv2.COLOR_BGR2HSV)
@@ -241,10 +221,14 @@ def get_goal_position(map_img):
     mask = cv2.inRange(hsv_img, lower_red, upper_red)
     mask = cv2.medianBlur(mask, 7)
 
+    cv2.imshow("mask", mask)
+
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     if not contours:
         return None
+
+    print(contours.shape)
 
     (x, y), _ = cv2.minEnclosingCircle(contours[0])
 
@@ -278,6 +262,6 @@ def get_thymio_info(map_img):
     return position, angle_degrees
 
 def draw_thymio_position(map_img, thymio_position):
-    print(f'thymio position: {thymio_position}')
+    # print(f'thymio position: {thymio_position}')
     if thymio_position is not None:
         draw_node(map_img, (int(thymio_position[0]), int(thymio_position[1])), (255, 0, 0), 9)
