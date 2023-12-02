@@ -63,6 +63,8 @@ def steer_danger(node,robot):
 
 # Async sensor reading update
 def on_variables_changed(node, variables):
+    
+    global robot
     try:
         global state, state_timer
         #Proximity has been updated
@@ -90,7 +92,6 @@ def on_variables_changed(node, variables):
         pass  # prox.horizontal not updated
 
     try:
-        global robot
         try:
             left_speed = variables["motor.left.speed"][0]
         except:
@@ -116,7 +117,6 @@ def on_variables_changed(node, variables):
 
     try:
         acc = variables["acc"]
-        global robot
         
         robot.kalman.update_acceleration(data=acc[0:1],time=get_time())
     except KeyError:
