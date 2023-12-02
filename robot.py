@@ -5,6 +5,7 @@ import time
 
 import math
 start_time = time.time()
+is_on = True
 #TODO get time
 def get_time():
     return (time.time() - start_time)
@@ -16,7 +17,7 @@ class Robot:
     kalman = None
 
 
-    def __init__(self, x = 0, y = 0, angle = 0, path = [(0,0),(1,1)]):
+    def __init__(self, x = 0, y = 0, angle = 0, path = [(0,0),(8,1)]):
         self.odometry = Odometry(x,y,angle)
         self.path_follower = PathFollow(path)
         self.kalman = Kalman([x,y],angle,[0,0],[0,0],0,get_time())
@@ -125,6 +126,13 @@ def on_variables_changed(node, variables):
         robot.kalman.update_acceleration(data=acc[0:2],time=get_time())
     except KeyError:
         pass # acceleration not updated
+    try:
+        global is_on
+        b = variables["button.center"]
+        if(b[0]):
+            is_on = not is_on
+    except KeyError:
+        pass 
 
 with ClientAsync() as client:
     async def prog():
@@ -140,13 +148,17 @@ with ClientAsync() as client:
                 # path follow loop:
 
                 point, _ = robot.path_follower.getLookaheadEdge(robot.odometry)
-                if(state == 0):
-                    steer(node, robot, point)
-                elif(state == 1):
-                    steer_danger(node,robot)
-                state_timer -= 1
-                if(state_timer < 0):
-                    state = 0
+                if(is_on):
+                    if(state == 0):
+                        steer(node, robot, point)
+                    elif(state == 1):
+                        steer_danger(node,robot)
+                    state_timer -= 1
+                    if(state_timer < 0):
+                        state = 0
+                else:
+                    print("frozen")
+                    node.send_set_variables(motors(0,0))
                 
                 if(robot.path_follower.current_edge >= len(robot.path_follower.path)-1):
                     await node.set_variables(motors(0,0))
