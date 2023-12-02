@@ -1,5 +1,6 @@
 from computer_vision import *
 from Astar_coord import *
+from Astar import *
 
 def main():
     cap = cv2.VideoCapture(0)
@@ -76,9 +77,9 @@ def main():
                 draw_reachable_nodes(map_img, list(unreachable_nodes.keys()))
                 draw_node(map_img, end, (0, 255, 0)) # <- End node
 
-                # map_img = draw_grid_on_map(map_img, grid, cell_size)
-                # map_img = draw_grid_path(map_img, grid, path_grid, cell_size)
-                map_img = cv2.resize(map_img, (600, 400))
+                map_img = draw_grid_on_map(map_img, grid, cell_size)
+                map_img = draw_grid_path(map_img, grid, path_grid, cell_size)
+                #map_img = cv2.resize(map_img, (600, 400))
 
                 cv2.imshow('Map', map_img)
 
@@ -95,7 +96,7 @@ def main():
                 capture_data = True
             elif key == ord('d'): # Press d to detect the Thymio and start the path planning
                 detect_thymio = True
-                path_plan = True
+                plan_path = True
                 print('Detecting Thymio...')
             elif key == ord('s'):
                 print('Detecting start...')

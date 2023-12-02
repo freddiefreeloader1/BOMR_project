@@ -164,6 +164,10 @@ def create_grid(map_img, obstacle_masks, cell_size):
                 if np.any((obstacle_mask_new > 0)):
                     grid[row][col] = 1
 
+                    grid[row + 1][col + 1] = 1
+                    grid[row + 1][col - 1] = 1
+                    grid[row - 1][col + 1] = 1
+
             except IndexError as e:
                 print(f"IndexError: {e}")
     return grid
@@ -270,8 +274,10 @@ def get_thymio_info(map_img):
                 print(f"Error: {e}")
                 return None, -1
 
+    position = tuple([int(pos) for pos in position])
     return position, angle_degrees
 
 def draw_thymio_position(map_img, thymio_position):
+    print(f'thymio position: {thymio_position}')
     if thymio_position is not None:
         draw_node(map_img, (int(thymio_position[0]), int(thymio_position[1])), (255, 0, 0), 9)
