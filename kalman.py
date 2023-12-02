@@ -16,7 +16,7 @@ class Kalman:
     kf_pos = KalmanFilter(dim_x=6, dim_z=2)
     kf_rot = KalmanFilter(dim_x=2,dim_z=1)
 
-    ACCEL_NOISE = 90
+    ACCEL_NOISE = 9.81/21
     ROT_NOISE = 0.05
     POS_NOISE = 0.5
     SPIN_NOISE = 0.1

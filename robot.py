@@ -38,7 +38,8 @@ def motors(left, right):
         "motor.left.target": [left],
         "motor.right.target": [right],
     }
-
+def change_acceleration(acc):
+    return acc*9.81/21.0
 ### ---- ROBOT CODE ---- ###
 
 #Steer the robot to a point
@@ -123,7 +124,8 @@ def on_variables_changed(node, variables):
 
     try:
         acc = variables["acc"]
-        
+        acc[0] = change_acceleration(acc[0])
+        acc[1] = change_acceleration(acc[1])
         robot.kalman.update_acceleration(data=acc[0:2],time=get_time())
     except KeyError:
         pass # acceleration not updated
