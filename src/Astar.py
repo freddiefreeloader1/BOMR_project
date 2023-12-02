@@ -156,10 +156,10 @@ def astar_grid(maze, start, end, moves):
             dx, dy = child.position[0] - current_node.position[0], child.position[1] - current_node.position[1]
 
             child.cost_of_move = current_node.cost_of_move + 1.41 if dx != 0 and dy != 0 else current_node.cost_of_move + 1
+           
+            child.heuristic = abs(child.position[0] - end_node.position[0]) \
 
-            child.heuristic = ((child.position[0] - end_node.position[0]) ** 2
-
-                            + (child.position[1] - end_node.position[1]) ** 2)
+            + abs(child.position[1] - end_node.position[1])
 
             child.total_cost = child.cost_of_move + child.heuristic
 

@@ -32,10 +32,10 @@ def main():
     thymio_angle = 0 # <- Kalman Filter and local navigation
 
     while True:
+
         ret, frame = cap.read()
         frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
         map_img = frame.copy()
-        
 
         if not ret:
             print("Unable to capture video")
@@ -74,9 +74,11 @@ def main():
 
                     ''' Path planning '''
                     map_img = cv2.resize(map_img, (max_width, max_height))
-                    grid, path_grid, simplified_path, metric_path = make_path(map_img, obstacle_masks, cell_size, start, end, grid, max_width, max_height)
+                    grid, path_grid, simplified_path, metric_path = make_path(map_img, obstacle_masks, cell_size, start, end, grid, 
+                    max_width, max_height)
                     print(metric_path)
                     plan_path = False
+                    
 
                 # Local navigatıon code 
 
@@ -115,3 +117,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+        
+        
+        
+     
