@@ -18,10 +18,6 @@ def preprocess_image(frame):
     #_, binary_img = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     binary_img = cv2.GaussianBlur(binary_img, (3, 3), 0)
 
-    #cv2.imshow('Bilateral image', bilateral_img)
-    #cv2.imshow('BW image', bw_img)
-    #cv2.imshow('Binary image', binary_img)
-
     return binary_img
 
 def capture_map_data(frame, binary_img, map_width, map_height):
@@ -250,22 +246,31 @@ def get_goal_position(map_img):
 
     return (int(x), int(y))
 
-def get_thymio_position(map_img):
+def get_thymio_info(map_img):
     dictionary = aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
     markerCorners, markerIds, rejectedCandidates = aruco.detectMarkers(map_img, dictionary)
-    thymio_position = None
+    position = None
+    angle_degrees = -1
 
     if markerIds is not None:
         for i, corner in enumerate(markerCorners):
             try:
                 aruco.drawDetectedMarkers(map_img, markerCorners)
-                thymio_position = corner[0].mean(axis=0)
-                # print(f"Marker ID: {markerIds[i]} Position (x, y): {thymio_position}")
+                corner = corner.squeeze()
+                position = corner.mean(axis=0)
+                #print(f"Marker ID: {markerIds[i]} Position (x, y): {thymio_position}")
+
+                dx = corner[1][0] - corner[0][0]  # x_tr - x_tl
+                dy = corner[1][1] - corner[0][1]  # y_tr - y_tl
+                angle_radians = np.arctan2(dy, dx)
+                angle_degrees = np.degrees(angle_radians) % 360
+                # print(f"Angle: {angle_degrees}")
+
             except Exception as e:
                 print(f"Error: {e}")
-                return None
+                return None, -1
 
-    return thymio_position
+    return position, angle_degrees
 
 def draw_thymio_position(map_img, thymio_position):
     if thymio_position is not None:

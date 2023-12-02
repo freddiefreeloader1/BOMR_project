@@ -25,7 +25,7 @@ def main():
     # Thymio variables
     detect_thymio = False
     thymio_position = (0, 0) # <- Kalman Filter and local navigation
-    thymio_angle = 0 # <- Kalman Filter and local navigation
+    thymio_angle_degrees = 0 # <- Kalman Filter and local navigation
 
     while True:
         ret, frame = cap.read()
@@ -55,8 +55,8 @@ def main():
                 map_img = cv2.warpPerspective(frame, M, (max_width, max_height))
 
                 if detect_thymio:
-                    thymio_position = get_thymio_position(map_img)
-                    # print(thymio_position)
+                    thymio_position, thymio_angle_degrees = get_thymio_info(map_img)
+                    # print(f'Position: {thymio_position}, Angle: {thymio_angle_degrees}')
                     draw_thymio_position(map_img, thymio_position)
                 
                 if plan_path:
@@ -76,8 +76,8 @@ def main():
                 draw_reachable_nodes(map_img, list(unreachable_nodes.keys()))
                 draw_node(map_img, end, (0, 255, 0)) # <- End node
 
-                map_img = draw_grid_on_map(map_img, grid, cell_size)
-                map_img = draw_grid_path(map_img, grid, path_grid, cell_size)
+                # map_img = draw_grid_on_map(map_img, grid, cell_size)
+                # map_img = draw_grid_path(map_img, grid, path_grid, cell_size)
                 map_img = cv2.resize(map_img, (600, 400))
 
                 cv2.imshow('Map', map_img)
