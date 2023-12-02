@@ -16,7 +16,7 @@ class Kalman:
     kf_pos = KalmanFilter(dim_x=6, dim_z=2)
     kf_rot = KalmanFilter(dim_x=2,dim_z=1)
 
-    ACCEL_NOISE = 20
+    ACCEL_NOISE = 90
     ROT_NOISE = 0.05
     POS_NOISE = 0.5
     SPIN_NOISE = 0.1
@@ -30,10 +30,10 @@ class Kalman:
         self.kf_rot.P = 100*np.eye(2)
 
     def get_rotation(self):
-        return self.kf_rot.x.T[:]
+        return self.kf_rot.x[0]
     
     def get_position(self):
-        return self.kf_pos.x.T[:]
+        return self.kf_pos.x[0:2]
         
     
     def _compute_kf_pos(self,data, dt):
@@ -56,7 +56,6 @@ class Kalman:
 
         self.kf_pos.predict()
         self.kf_pos.update(data)
-
     def _compute_kf_rot(self,data,dt):
         noise = self.SPIN_NOISE # most dominant solution
         
@@ -71,7 +70,7 @@ class Kalman:
         self.kf_rot.update(data)
     # Update the accelerometor readings from the robot
     def update_acceleration(self,data,time):
-
+       
         # calculate time since last measurement and update it
         dt = time- self.time_pos
         self.time_pos = time
@@ -85,7 +84,6 @@ class Kalman:
         self.kf_pos.R = (self.ACCEL_NOISE**2)*np.eye(2)
 
         self._compute_kf_pos(data,dt)
-
     # Update the change in heading from the last update
     # (defacto, this is calculated using the wheel speeds)
     def update_spin(self,data, time):

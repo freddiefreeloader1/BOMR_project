@@ -1,12 +1,13 @@
 from tdmclient import ClientAsync
 from path_following import get_angle_to, Odometry,PathFollow,PID
 from kalman import Kalman
+import time
 
 import math
-
+start_time = time.time()
 #TODO get time
 def get_time():
-    return 0
+    return (time.time() - start_time)
 
 class Robot:
     odometry = Odometry()
@@ -14,10 +15,12 @@ class Robot:
     angle_PID = PID(1,0,0)
     kalman = None
 
+
     def __init__(self, x = 0, y = 0, angle = 0, path = [(0,0),(1,1)]):
         self.odometry = Odometry(x,y,angle)
         self.path_follower = PathFollow(path)
         self.kalman = Kalman([x,y],angle,[0,0],[0,0],0,get_time())
+
 
 
     def update_odometry(self):
@@ -41,13 +44,14 @@ def motors(left, right):
 def steer(node, robot ,point):
     angle = get_angle_to(robot.odometry,point)
     
-    print("TARGET: {:.2f}, ROBOT: {:.2f}, {:.2f} angle - {:.2f}".format(robot.path_follower.current_edge,robot.odometry.x,robot.odometry.y,robot.odometry.angle))
+    #print("TARGET: {:.2f}, ROBOT: {:.2f}, {:.2f} angle - {:.2f}".format(robot.path_follower.current_edge,robot.odometry.x,robot.odometry.y,robot.odometry.angle))
     # SPEED CONSTANTS
     forward_speed = 250
     steer_gain = 150
     steer_max = 70
 
     steer = steer_gain * angle
+
     node.send_set_variables(motors(int(-steer + forward_speed ), int( steer + forward_speed)))
 
 def steer_danger(node,robot):
@@ -118,7 +122,7 @@ def on_variables_changed(node, variables):
     try:
         acc = variables["acc"]
         
-        robot.kalman.update_acceleration(data=acc[0:1],time=get_time())
+        robot.kalman.update_acceleration(data=acc[0:2],time=get_time())
     except KeyError:
         pass # acceleration not updated
 
