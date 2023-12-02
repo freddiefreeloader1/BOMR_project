@@ -1,6 +1,6 @@
 from computer_vision import *
 from Astar_coord import *
-from Astar import *
+from Astar import * 
 
 def main():
     cap = cv2.VideoCapture(0)
@@ -98,9 +98,6 @@ def main():
                 detect_thymio = True
                 plan_path = True
                 print('Detecting Thymio...')
-            elif key == ord('s'):
-                print('Detecting start...')
-                start = detect_start(map_img)
 
         except Exception as e:
             print("Error: ", e)
