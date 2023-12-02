@@ -130,13 +130,3 @@ class PID:
         self.last_current = current
 
         return feedback
-
-
-class Robot:
-    odometry = Odometry()
-    path_follower = None
-    angle_PID = PID(1,0,0)
-
-    def __init__(self, x = 0, y = 0, angle = 0, path = [(0,0),(1,1)]):
-        self.odometry = Odometry(x,y,angle)
-        self.path_follower = PathFollow(path)

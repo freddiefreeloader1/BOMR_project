@@ -1,6 +1,33 @@
 from tdmclient import ClientAsync
-from path_following import Robot, get_angle_to
+from path_following import get_angle_to, Odometry,PathFollow,PID
+from kalman import Kalman
+import time
+
 import math
+start_time = time.time()
+is_on = True
+#TODO get time
+def get_time():
+    return (time.time() - start_time)
+
+class Robot:
+    odometry = Odometry()
+    path_follower = None
+    angle_PID = PID(1,0,0)
+    kalman = None
+
+
+    def __init__(self, x = 0, y = 0, angle = 0, path = [(0,0),(8,1)]):
+        self.odometry = Odometry(x,y,angle)
+        self.path_follower = PathFollow(path)
+        self.kalman = Kalman([x,y],angle,[0,0],[0,0],0,get_time())
+
+
+
+    def update_odometry(self):
+        self.odometry.x, self.odometry.y = self.kalman.get_position()
+        self.odometry.angle = self.kalman.get_rotation()
+
 robot = Robot(0,0,0,[(0, 0), (1, 0),(1,1),(3,1)])
 state = 0
 state_timer = 0
@@ -18,13 +45,14 @@ def motors(left, right):
 def steer(node, robot ,point):
     angle = get_angle_to(robot.odometry,point)
     
-    print("TARGET: {:.2f}, ROBOT: {:.2f}, {:.2f} angle - {:.2f}".format(robot.path_follower.current_edge,robot.odometry.x,robot.odometry.y,robot.odometry.angle))
+    print("TARGET: {:.2f}, ROBOT: {:.2f}, {:.2f} angle - {:.2f}".format(robot.path_follower.current_edge,robot.odometry.x,robot.odometry.y,math.degrees(robot.odometry.angle)))
     # SPEED CONSTANTS
     forward_speed = 250
     steer_gain = 150
     steer_max = 70
 
     steer = steer_gain * angle
+
     node.send_set_variables(motors(int(-steer + forward_speed ), int( steer + forward_speed)))
 
 def steer_danger(node,robot):
@@ -40,6 +68,8 @@ def steer_danger(node,robot):
 
 # Async sensor reading update
 def on_variables_changed(node, variables):
+    
+    global robot
     try:
         global state, state_timer
         #Proximity has been updated
@@ -67,7 +97,6 @@ def on_variables_changed(node, variables):
         pass  # prox.horizontal not updated
 
     try:
-        global robot
         try:
             left_speed = variables["motor.left.speed"][0]
         except:
@@ -79,17 +108,32 @@ def on_variables_changed(node, variables):
             if(left_speed == 0):
                 raise KeyError  #if neither was updated, skip
         #ODOMETRY CONSTANTS
-        robot_diameter_m = 0.25
-        speed_to_m = 0.01
-        motor_read_freq = 100
-
+        ROBOT_DIAMETER = 0.25
+        ENCODER_TO_MPS = 0.01
+        MOTOR_READ_FREQ = 10
+        constant_spin = 2*math.pi/(4.6*400)
         #Update Odometry:
-        robot.odometry.x += (math.cos(robot.odometry.angle)*speed_to_m*(left_speed + right_speed)/2)/motor_read_freq
-        robot.odometry.y += (math.sin(robot.odometry.angle)*speed_to_m*(left_speed + right_speed)/2)/motor_read_freq #speed in cm to robot pos in meters
-        dtheta = (right_speed - left_speed) * speed_to_m / robot_diameter_m
-        robot.odometry.angle = (robot.odometry.angle + dtheta / motor_read_freq) % (2*math.pi)
+        dtheta = (right_speed - left_speed)*constant_spin
+        #dtheta = 2*math.pi/(4.6*(right_speed - left_speed))
+        #2*pi/4.6 = (400)*x 
+        robot.kalman.update_spin(data=dtheta,time=get_time())
+        
     except KeyError:
         pass  # motors not updated
+
+    try:
+        acc = variables["acc"]
+        
+        robot.kalman.update_acceleration(data=acc[0:2],time=get_time())
+    except KeyError:
+        pass # acceleration not updated
+    try:
+        global is_on
+        b = variables["button.center"]
+        if(b[0]):
+            is_on = not is_on
+    except KeyError:
+        pass 
 
 with ClientAsync() as client:
     async def prog():
@@ -99,16 +143,22 @@ with ClientAsync() as client:
             await node.watch(variables=True)
             node.add_variables_changed_listener(on_variables_changed)
             while True:
+                # Update odometry:
+                robot.update_odometry()
+
                 # path follow loop:
 
                 point, _ = robot.path_follower.getLookaheadEdge(robot.odometry)
-                if(state == 0):
-                    steer(node, robot, point)
-                elif(state == 1):
-                    steer_danger(node,robot)
-                state_timer -= 1
-                if(state_timer < 0):
-                    state = 0
+                if(is_on):
+                    if(state == 0):
+                        steer(node, robot, point)
+                    elif(state == 1):
+                        steer_danger(node,robot)
+                    state_timer -= 1
+                    if(state_timer < 0):
+                        state = 0
+                else:
+                    node.send_set_variables(motors(0,0))
                 
                 if(robot.path_follower.current_edge >= len(robot.path_follower.path)-1):
                     await node.set_variables(motors(0,0))
