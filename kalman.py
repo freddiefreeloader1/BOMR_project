@@ -17,6 +17,7 @@ class Kalman:
     kf_rot = KalmanFilter(dim_x=2,dim_z=1)
 
     ACCEL_NOISE = 9.81/21
+    VEL_NOISE = 0.01
     ROT_NOISE = 0.05
     POS_NOISE = 0.5
     SPIN_NOISE = 0.1
@@ -82,6 +83,22 @@ class Kalman:
         self.kf_pos.H = np.array([[0,0,0,0,1,0],
                                   [0,0,0,0,0,1]])
         self.kf_pos.R = (self.ACCEL_NOISE**2)*np.eye(2)
+
+        self._compute_kf_pos(data,dt)
+
+    def update_velocity(self,data,time):
+       
+        # calculate time since last measurement and update it
+        dt = time- self.time_pos
+        self.time_pos = time
+        rotation = self.kf_rot.x.T[0]
+        # Transform data to local
+        data = change_frame(data, rotation)
+
+        # Update kf parameters for multiplication
+        self.kf_pos.H = np.array([[0,0,1,0,0,0],
+                                  [0,0,0,1,0,0]])
+        self.kf_pos.R = (self.VEL_NOISE**2)*np.eye(2)
 
         self._compute_kf_pos(data,dt)
     # Update the change in heading from the last update

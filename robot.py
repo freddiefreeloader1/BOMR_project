@@ -40,6 +40,11 @@ def motors(left, right):
     }
 def change_acceleration(acc):
     return acc*9.81/21.0
+
+def change_velocity(vel):
+    vel = 0.0003175*vel
+    return vel
+
 ### ---- ROBOT CODE ---- ###
 
 #Steer the robot to a point
@@ -119,6 +124,13 @@ def on_variables_changed(node, variables):
         #2*pi/4.6 = (400)*x 
         robot.kalman.update_spin(data=dtheta,time=get_time())
         
+
+        avr_speed = (right_speed + left_speed)/2
+        avr_speed = change_velocity(avr_speed)
+        speed = [avr_speed,0]
+        robot.kalman.update_velocity(data = speed,time=get_time())
+        
+    
     except KeyError:
         pass  # motors not updated
 
