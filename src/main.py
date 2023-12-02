@@ -1,5 +1,6 @@
 from computer_vision import *
 from Astar_coord import *
+from Astar import * 
 
 def main():
     cap = cv2.VideoCapture(0)
