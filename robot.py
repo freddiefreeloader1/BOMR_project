@@ -45,7 +45,7 @@ def motors(left, right):
 def steer(node, robot ,point):
     angle = get_angle_to(robot.odometry,point)
     
-    #print("TARGET: {:.2f}, ROBOT: {:.2f}, {:.2f} angle - {:.2f}".format(robot.path_follower.current_edge,robot.odometry.x,robot.odometry.y,robot.odometry.angle))
+    print("TARGET: {:.2f}, ROBOT: {:.2f}, {:.2f} angle - {:.2f}".format(robot.path_follower.current_edge,robot.odometry.x,robot.odometry.y,math.degrees(robot.odometry.angle)))
     # SPEED CONSTANTS
     forward_speed = 250
     steer_gain = 150
@@ -110,11 +110,12 @@ def on_variables_changed(node, variables):
         #ODOMETRY CONSTANTS
         ROBOT_DIAMETER = 0.25
         ENCODER_TO_MPS = 0.01
-        MOTOR_READ_FREQ = 100
-
+        MOTOR_READ_FREQ = 10
+        constant_spin = 2*math.pi/(4.6*400)
         #Update Odometry:
-        dtheta = (right_speed - left_speed) * ENCODER_TO_MPS / ROBOT_DIAMETER
-
+        dtheta = (right_speed - left_speed)*constant_spin
+        #dtheta = 2*math.pi/(4.6*(right_speed - left_speed))
+        #2*pi/4.6 = (400)*x 
         robot.kalman.update_spin(data=dtheta,time=get_time())
         
     except KeyError:
@@ -157,7 +158,6 @@ with ClientAsync() as client:
                     if(state_timer < 0):
                         state = 0
                 else:
-                    print("frozen")
                     node.send_set_variables(motors(0,0))
                 
                 if(robot.path_follower.current_edge >= len(robot.path_follower.path)-1):
