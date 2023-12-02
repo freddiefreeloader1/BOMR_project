@@ -18,7 +18,7 @@ def preprocess_image(frame):
     #_, binary_img = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     binary_img = cv2.GaussianBlur(binary_img, (3, 3), 0)
 
-    cv2.imshow("binary img", binary_img)
+    # cv2.imshow("binary img", binary_img)
 
     return binary_img
 
@@ -57,8 +57,6 @@ def capture_obstacle_data(map_img, padding):
         return []
 
     obstacle_masks = []
-    nodes = []
-    unreachable_nodes = {}
 
     for i, contour in enumerate(obstacle_contours):
         if hierarchy[0][i][2] != -1:
@@ -77,73 +75,11 @@ def capture_obstacle_data(map_img, padding):
         cv2.drawContours(mask, [contour], -1, 255, -1)
         obstacle_masks.append(mask)
 
-        centroid = np.mean(approx_obstacle, axis=0)
-
-        for point in approx_obstacle:
-            new_point = calculate_new_point(point, centroid, padding)
-            if new_point is not None:
-                tuple_new_point = tuple(new_point)
-                nodes.append(tuple_new_point)
-                unreachable_nodes[tuple_new_point] = []
-
-        for node in unreachable_nodes.keys():
-            for neighbor in nodes:
-                if node == neighbor:
-                    continue
-
-                if neighbor in unreachable_nodes[node]:
-                    continue
-
-                if is_reachable(node, neighbor, obstacle_masks, map_img):
-                    unreachable_nodes[node].append(neighbor)
-
-    return unreachable_nodes, obstacle_masks
-
-def is_reachable(node, neighbor, obstacle_masks, map_img):
-    line_img = np.zeros_like(obstacle_masks[0])
-    node_int = tuple(int(val) for val in node)
-    neighbor_int = tuple(int(val) for val in neighbor)
-    cv2.line(line_img, node_int, neighbor_int, 255, 3)
-
-    for mask in obstacle_masks:
-        if np.any(cv2.bitwise_and(line_img, mask)):
-            return False
-    return True
-
-def calculate_new_point(point, centroid, padding):
-    original_point = point[0]
-    vector = original_point - centroid[0]
-    norm = np.linalg.norm(vector)
-
-    if norm == 0 or np.any(np.isnan(vector / norm)):
-        return None
-
-    return original_point + padding * (vector / norm)
-
-def draw_reachable_nodes(map_img, nodes):
-    for point in nodes:
-        point_int = tuple(int(val) for val in point)
-        cv2.circle(map_img, point_int, 5, (0, 0, 255), -1)
+    return obstacle_masks
 
 def draw_node(map_img, position, color, radius=9):
     if position is not None:
         cv2.circle(map_img, position, radius, color, -1)
-
-def draw_path(map_img, path):
-    for i in range(len(path) - 1):
-        start = tuple(int(val) for val in path[i])
-        end = tuple(int(val) for val in path[i + 1])
-        cv2.line(map_img, start, end, (0, 255, 0), 2)
-
-def draw_unreachable_nodes(map_img, unreachable_nodes):
-    color = (0, 0, 255)
-    for node, neighbors in unreachable_nodes.items():
-        node_int = tuple(int(val) for val in node)
-        cv2.circle(map_img, node_int, 5, color, -1)
-
-        for neighbor in neighbors:
-            neighbor_int = tuple(int(val) for val in neighbor)
-            cv2.line(map_img, node_int, neighbor_int, color, 2)
 
 def create_grid(map_img, obstacle_masks, cell_size):
     map_height, map_width = map_img.shape[:2]
@@ -166,9 +102,9 @@ def create_grid(map_img, obstacle_masks, cell_size):
                 if np.any((obstacle_mask_new > 0)):
                     grid[row][col] = 1
 
-                    grid[row + 1][col + 1] = 1
-                    grid[row + 1][col - 1] = 1
-                    grid[row - 1][col + 1] = 1
+                    grid[row + 2][col + 2] = 1
+                    grid[row + 2][col - 2] = 1
+                    grid[row - 2][col + 2] = 1
 
             except IndexError as e:
                 print(f"IndexError: {e}")
@@ -208,37 +144,40 @@ def draw_grid_path(map_img, grid, path, cell_size):
 
     return grid_path
 
-
-
-
-
 def get_goal_position(map_img):
     hsv_img = cv2.cvtColor(map_img, cv2.COLOR_BGR2HSV)
 
-    lower_red = np.array([160, 100, 20], dtype="uint8")
-    upper_red = np.array([180, 255, 255], dtype="uint8")
+    lower_red = np.array([0, 100, 20], dtype="uint8")  # Lower bound for red in HSV
+    upper_red = np.array([10, 255, 255], dtype="uint8")  # Upper bound for red in HSV
 
-    mask = cv2.inRange(hsv_img, lower_red, upper_red)
+    mask1 = cv2.inRange(hsv_img, lower_red, upper_red)
+
+    lower_red = np.array([160, 100, 20], dtype="uint8")  # Lower bound for red in HSV
+    upper_red = np.array([180, 255, 255], dtype="uint8")  # Upper bound for red in HSV
+
+    mask2 = cv2.inRange(hsv_img, lower_red, upper_red)
+
+    mask = cv2.bitwise_or(mask1, mask2)
     mask = cv2.medianBlur(mask, 7)
-
-    cv2.imshow("mask", mask)
 
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     if not contours:
         return None
 
-    print(contours.shape)
+    max_contour = max(contours, key=cv2.contourArea)
 
-    (x, y), _ = cv2.minEnclosingCircle(contours[0])
+    if len(max_contour) > 0:
+        (x, y), _ = cv2.minEnclosingCircle(max_contour)
+        return (int(x), int(y))
 
-    return (int(x), int(y))
+    return None
 
 def get_thymio_info(map_img):
     dictionary = aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
     markerCorners, markerIds, rejectedCandidates = aruco.detectMarkers(map_img, dictionary)
     position = None
-    angle_degrees = -1
+    angle_radians = -1
 
     if markerIds is not None:
         for i, corner in enumerate(markerCorners):
@@ -251,7 +190,6 @@ def get_thymio_info(map_img):
                 dx = corner[1][0] - corner[0][0]  # x_tr - x_tl
                 dy = corner[1][1] - corner[0][1]  # y_tr - y_tl
                 angle_radians = np.arctan2(dy, dx)
-                angle_degrees = np.degrees(angle_radians) % 360
                 # print(f"Angle: {angle_degrees}")
 
             except Exception as e:
@@ -259,9 +197,8 @@ def get_thymio_info(map_img):
                 return None, -1
 
     position = tuple([int(pos) for pos in position])
-    return position, angle_degrees
+    return position, angle_radians
 
 def draw_thymio_position(map_img, thymio_position):
-    # print(f'thymio position: {thymio_position}')
     if thymio_position is not None:
         draw_node(map_img, (int(thymio_position[0]), int(thymio_position[1])), (255, 0, 0), 9)

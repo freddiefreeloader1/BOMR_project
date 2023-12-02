@@ -14,23 +14,28 @@ def main():
 
     # Global navigation variables
     plan_path = False
-    unreachable_nodes = {}
-    start = None
-    end = None
+
+    # Grid settıng
     cell_size = 20
     start_grid = () 
     end_grid = ()
     grid = np.array([])
     path_grid = np.array([])
+    
+    start = None # Path for local navigation
+    end = None # Path for local navigation
+    metric_path = [] # Path for local navigation
 
     # Thymio variables
     detect_thymio = False
     thymio_position = (0, 0) # <- Kalman Filter and local navigation
-    thymio_angle_degrees = 0 # <- Kalman Filter and local navigation
+    thymio_angle = 0 # <- Kalman Filter and local navigation
 
     while True:
         ret, frame = cap.read()
+        frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
         map_img = frame.copy()
+        
 
         if not ret:
             print("Unable to capture video")
@@ -43,9 +48,7 @@ def main():
                 capture_map, coord_to_transform, map_img, pts2 = capture_map_data(frame, binary_img, max_width, max_height)
                 
                 if capture_map:
-                    unreachable_nodes, obstacle_masks = capture_obstacle_data(map_img, padding)
-                    end = get_goal_position(map_img)
-
+                    obstacle_masks = capture_obstacle_data(map_img, padding)
                     print("Map and obstacles captured!")
 
                     capture_data = False
@@ -54,25 +57,31 @@ def main():
             elif setup_finished:
                 M = cv2.getPerspectiveTransform(coord_to_transform, pts2)
                 map_img = cv2.warpPerspective(frame, M, (max_width, max_height))
+                
+                end = get_goal_position(map_img)
+                # print("End", end)
 
                 if detect_thymio:
-                    thymio_position, thymio_angle_degrees = get_thymio_info(map_img)
-                    # print(f'Position: {thymio_position}, Angle: {thymio_angle_degrees}')
+                    thymio_position, thymio_angle = get_thymio_info(map_img)
+                    # print(f'Position: {thymio_position}, Angle: {thymio_angle}')
                     draw_thymio_position(map_img, thymio_position)
                 
                 if plan_path:
+                    if thymio_position is None:
+                        continue
+                    
                     start = thymio_position
+
                     ''' Path planning '''
-                    # 297 x 420 millimetres for a3
-                    # map_img = cv2.resize(map_img, (1260, 891))
+                    map_img = cv2.resize(map_img, (max_width, max_height))
                     grid, path_grid, simplified_path, metric_path = make_path(map_img, obstacle_masks, cell_size, start, end, grid, max_width, max_height)
                     print(metric_path)
-
                     plan_path = False
 
+                # Local navigatıon code 
+
                 draw_node(map_img, start, (0, 73, 255)) # <- Start node
-                draw_reachable_nodes(map_img, list(unreachable_nodes.keys()))
-                draw_node(map_img, end, (0, 255, 0)) # <- End node
+                draw_node(map_img, end, (255, 255, 0)) # <- End node
  
                 map_img = draw_grid_on_map(map_img, grid, cell_size)
                 map_img = draw_grid_path(map_img, grid, path_grid, cell_size)
