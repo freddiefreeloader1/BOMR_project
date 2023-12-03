@@ -2,11 +2,20 @@ from computer_vision import *
 from Astar_coord import *
 from Astar import * 
 
+from enum import Enum
+
+class Quit:
+    pass
+class CameraState(Enum):
+    WAITING = 0,
+    CAPTURING_DATA = 1,
+    SETTING_UP = 2,
+    DONE = 3
 
 cap = None
+camera_state = CameraState.WAITING
 
 # Map and obstacle detection variables
-capture_data, setup_finished = False, False
 max_width, max_height = 1170, 735
 padding = 50
 coord_to_transform = []
@@ -32,7 +41,7 @@ thymio_position = (0, 0) # <- Kalman Filter and local navigation
 thymio_angle = 0 # <- Kalman Filter and local navigation
 
 def camera_handle_keys():
-    global capture_data, detect_thymio, plan_path
+    global camera_state, detect_thymio, plan_path
     ''' Keyboard options '''    
     key = cv2.waitKey(24)
 
@@ -41,14 +50,14 @@ def camera_handle_keys():
         return False # stop
     elif key == ord('p'): # Press p to prepare the map and obstacles
         print("Capturing map...")
-        capture_data = True
+        camera_state = CameraState.CAPTURING_DATA
     elif key == ord('d'): # Press d to detect the Thymio and start the path planning
         detect_thymio = True
         plan_path = True
         print('Detecting Thymio...')
 
 def camera_loop():
-    global capture_data, setup_finished, max_height, max_width, padding, coord_to_transform, plan_path, cell_size, start_grid, end_grid, grid, path_grid, start, end, metric_path, detect_thymio, thymio_angle, thymio_position
+    global camera_state, max_height, max_width, padding, coord_to_transform, plan_path, cell_size, start_grid, end_grid, grid, path_grid, start, end, metric_path, detect_thymio, thymio_angle, thymio_position
     ret, frame = cap.read()
     frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
     map_img = frame.copy()
@@ -60,17 +69,16 @@ def camera_loop():
     binary_img = preprocess_image(frame)
 
     try:
-        if capture_data:
+        if camera_state == CameraState.CAPTURING_DATA:
             capture_map, coord_to_transform, map_img, pts2 = capture_map_data(frame, binary_img, max_width, max_height)
             
             if capture_map:
                 obstacle_masks = capture_obstacle_data(map_img, padding)
                 print("Map and obstacles captured!")
 
-                capture_data = False
-                setup_finished = True
+                camera_state == CameraState.SETTING_UP
 
-        elif setup_finished:
+        elif camera_state == CameraState.CAPTURING_DATA:
             M = cv2.getPerspectiveTransform(coord_to_transform, pts2)
             map_img = cv2.warpPerspective(frame, M, (max_width, max_height))
             
@@ -108,7 +116,6 @@ def camera_loop():
             cv2.imshow('Map', map_img)
 
         cv2.imshow('Original image', frame)
-
         camera_handle_keys()
 
     except Exception as e:
