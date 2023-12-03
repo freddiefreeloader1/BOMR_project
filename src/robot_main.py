@@ -1,5 +1,6 @@
 from tdmclient import ClientAsync
 from robot import *
+from common import Quit
 
 import math
 
@@ -42,7 +43,7 @@ def RobotLoop():
     
     if(robot.path_follower.current_edge >= len(robot.path_follower.path)-1):
         node.set_variables(motors(0,0))
-        exit(1)
+        raise Quit
 
 def RobotClose():
     global node
@@ -55,6 +56,6 @@ if __name__ == "__main__":
         while True:
             RobotLoop()
             time.sleep(0.01)
-    except Exception:
+    except Quit:
         pass
     RobotClose()
