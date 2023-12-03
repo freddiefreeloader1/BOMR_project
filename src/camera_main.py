@@ -56,7 +56,7 @@ def camera_handle_keys():
         plan_path = True
         print('Detecting Thymio...')
 
-def camera_loop():
+def CameraLoop():
     global camera_state, max_height, max_width, padding, coord_to_transform, plan_path, cell_size, start_grid, end_grid, grid, path_grid, start, end, metric_path, detect_thymio, thymio_angle, thymio_position
     ret, frame = cap.read()
     frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
@@ -121,21 +121,21 @@ def camera_loop():
     except Exception as e:
         print("Error: ", e)
 
-def camera_close():
+def CameraClose():
     global cap
     cap.release()
     cv2.destroyAllWindows()
 
-def camera_init():
+def CameraInit():
     global cap
     cap = cv2.VideoCapture(0)
 
 if __name__ == "__main__":
-    camera_init()
+    CameraInit()
     # replace loop with return
     try:
         while True:
-            camera_loop()
+            CameraLoop()
     except Quit:
         pass
-    camera_close()
+    CameraClose()
