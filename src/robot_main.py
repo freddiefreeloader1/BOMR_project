@@ -10,14 +10,17 @@ robot = Robot(0,0,0,[(0, 0), (1, 0),(1,1),(3,1)])
 client = ClientAsync()
 node = None
 
-async def RobotInit():
-    global client,node
-    node = await client.wait_for_node()
-    await node.lock()
+def RobotInit():
+    async def prog():    
+        global client,node
+        node = await client.wait_for_node()
+        await node.lock()
 
-    #Set up listener functions
-    await node.watch(variables=True)
-    await node.add_variables_changed_listener(on_variables_changed)
+        #Set up listener functions
+        await node.watch(variables=True)
+        await node.add_variables_changed_listener(on_variables_changed)
+
+    client.run_async_program(prog)
 
 def RobotLoop():
     global robot,client,node
@@ -46,8 +49,7 @@ def RobotClose():
     node.unlock()
 
 if __name__ == "__main__":
-    client.run_async_program(RobotInit)
-    print("done with robot init")
+    RobotInit()
     # replace loop with return
     try:
         while True:
