@@ -4,7 +4,7 @@ from Astar import *
 
 from enum import Enum
 
-class Quit:
+class Quit(SystemExit):
     pass
 class CameraState(Enum):
     WAITING = 0,
@@ -47,7 +47,7 @@ def camera_handle_keys():
 
     if key == ord('q'):
         print("Quitting...")
-        return False # stop
+        raise Quit
     elif key == ord('p'): # Press p to prepare the map and obstacles
         print("Capturing map...")
         camera_state = CameraState.CAPTURING_DATA
@@ -64,7 +64,7 @@ def camera_loop():
 
     if not ret:
         print("Unable to capture video")
-        return False
+        raise Quit
 
     binary_img = preprocess_image(frame)
 
@@ -92,7 +92,7 @@ def camera_loop():
             
             if plan_path:
                 if thymio_position is None:
-                    return True #continue
+                    return #continue
                 
                 start = thymio_position
 
@@ -120,7 +120,6 @@ def camera_loop():
 
     except Exception as e:
         print("Error: ", e)
-    return True
 
 def camera_close():
     global cap
@@ -134,6 +133,9 @@ def camera_init():
 if __name__ == "__main__":
     camera_init()
     # replace loop with return
-    while camera_loop():
+    try:
+        while True:
+            camera_loop()
+    except Quit:
         pass
     camera_close()
