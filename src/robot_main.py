@@ -1,4 +1,3 @@
-from main import Quit
 from tdmclient import ClientAsync
 from robot import *
 
@@ -52,6 +51,7 @@ if __name__ == "__main__":
     try:
         while True:
             RobotLoop()
+            time.sleep(0.01)
     except SystemExit:
         pass
     RobotClose()
