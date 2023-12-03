@@ -31,6 +31,21 @@ detect_thymio = False
 thymio_position = (0, 0) # <- Kalman Filter and local navigation
 thymio_angle = 0 # <- Kalman Filter and local navigation
 
+def camera_handle_keys():
+    global capture_data, detect_thymio, plan_path
+    ''' Keyboard options '''    
+    key = cv2.waitKey(24)
+
+    if key == ord('q'):
+        print("Quitting...")
+        return False # stop
+    elif key == ord('p'): # Press p to prepare the map and obstacles
+        print("Capturing map...")
+        capture_data = True
+    elif key == ord('d'): # Press d to detect the Thymio and start the path planning
+        detect_thymio = True
+        plan_path = True
+        print('Detecting Thymio...')
 
 def camera_loop():
     global capture_data, setup_finished, max_height, max_width, padding, coord_to_transform, plan_path, cell_size, start_grid, end_grid, grid, path_grid, start, end, metric_path, detect_thymio, thymio_angle, thymio_position
@@ -94,19 +109,7 @@ def camera_loop():
 
         cv2.imshow('Original image', frame)
 
-        ''' Keyboard options '''
-        key = cv2.waitKey(24)
-
-        if key == ord('q'):
-            print("Quitting...")
-            return False # stop
-        elif key == ord('p'): # Press p to prepare the map and obstacles
-            print("Capturing map...")
-            capture_data = True
-        elif key == ord('d'): # Press d to detect the Thymio and start the path planning
-            detect_thymio = True
-            plan_path = True
-            print('Detecting Thymio...')
+        camera_handle_keys()
 
     except Exception as e:
         print("Error: ", e)
