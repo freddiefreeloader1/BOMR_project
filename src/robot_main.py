@@ -7,17 +7,17 @@ import math
 
 
 robot = Robot(0,0,0,[(0, 0), (1, 0),(1,1),(3,1)])
-client = None
+client = ClientAsync()
 node = None
 
-def RobotInit():
+async def RobotInit():
     global client,node
-    client = ClientAsync()
-    node = client.lock()
+    node = await client.wait_for_node()
+    await node.lock()
 
     #Set up listener functions
-    node.watch(variables=True)
-    node.add_variables_changed_listener(on_variables_changed)
+    await node.watch(variables=True)
+    await node.add_variables_changed_listener(on_variables_changed)
 
 def RobotLoop():
     global robot,client,node
@@ -46,12 +46,13 @@ def RobotClose():
     node.unlock()
 
 if __name__ == "__main__":
-    RobotInit()
+    client.run_async_program(RobotInit)
+    print("done with robot init")
     # replace loop with return
     try:
         while True:
             RobotLoop()
             time.sleep(0.01)
-    except SystemExit:
+    except Exception:
         pass
     RobotClose()
