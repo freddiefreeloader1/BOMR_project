@@ -4,9 +4,6 @@ from Astar import *
 from camera_main import CameraClose, CameraInit, CameraLoop
 from robot_main import RobotClose, RobotInit, RobotLoop
 
-class Quit(SystemExit):
-    pass
-
 def main():
     CameraInit()
     RobotInit()
@@ -15,7 +12,7 @@ def main():
         while True:
             CameraLoop()
             RobotLoop()
-    except Quit:
+    except SystemExit:
         pass
     CameraClose()
     RobotClose()

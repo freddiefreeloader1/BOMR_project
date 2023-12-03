@@ -1,8 +1,5 @@
 from main import Quit
 from tdmclient import ClientAsync
-from path_following import get_angle_to, Odometry,PathFollow,PID
-from kalman import Kalman
-import time
 from robot import *
 
 import math
@@ -43,8 +40,18 @@ def RobotLoop():
     
     if(robot.path_follower.current_edge >= len(robot.path_follower.path)-1):
         node.set_variables(motors(0,0))
-        raise Quit
+        exit(1)
 
 def RobotClose():
     global node
     node.unlock()
+
+if __name__ == "__main__":
+    RobotInit()
+    # replace loop with return
+    try:
+        while True:
+            RobotLoop()
+    except SystemExit:
+        pass
+    RobotClose()

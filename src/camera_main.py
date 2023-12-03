@@ -1,7 +1,6 @@
 from computer_vision import *
 from Astar_coord import *
 from Astar import * 
-from main import Quit
 from enum import Enum
 
 class CameraState(Enum):
@@ -45,7 +44,7 @@ def camera_handle_keys():
 
     if key == ord('q'):
         print("Quitting...")
-        raise Quit
+        exit(1)
     elif key == ord('p'): # Press p to prepare the map and obstacles
         print("Capturing map...")
         camera_state = CameraState.CAPTURING_DATA
@@ -62,7 +61,7 @@ def CameraLoop():
 
     if not ret:
         print("Unable to capture video")
-        raise Quit
+        exit(1)
 
     binary_img = preprocess_image(frame)
 
@@ -134,6 +133,6 @@ if __name__ == "__main__":
     try:
         while True:
             CameraLoop()
-    except Quit:
+    except SystemExit:
         pass
     CameraClose()
