@@ -12,7 +12,8 @@ def get_time():
 
 class RobotState(Enum):
     FOLLOWING_PATH = 0,
-    AVOIDING_WALLS = 1
+    AVOIDING_WALLS = 1,
+    STOPPED = 2
 class Robot:
     odometry = Odometry()
     path_follower = None
@@ -143,10 +144,9 @@ def on_variables_changed(node, variables):
     except KeyError:
         pass # acceleration not updated
     try:
-        global is_on
         b = variables["button.center"]
         if(b[0]):
-            is_on = not is_on
+            robot.state = RobotState.FOLLOWING_PATH if (robot.state == RobotState.STOPPED) else RobotState.STOPPED
     except KeyError:
         pass 
 
@@ -164,16 +164,15 @@ with ClientAsync() as client:
                 # path follow loop:
 
                 point, _ = robot.path_follower.getLookaheadEdge(robot.odometry)
-                if(is_on):
-                    if(robot.state == RobotState.FOLLOWING_PATH):
-                        steer(node, robot, point)
-                    elif(robot.state == RobotState.AVOIDING_WALLS):
-                        steer_danger(node,robot)
-                    robot.state_timer -= 1
-                    if(robot.state_timer < 0):
-                        robot.state == RobotState.FOLLOWING_PATH
-                else:
+                if(robot.state == RobotState.FOLLOWING_PATH):
+                    steer(node, robot, point)
+                elif(robot.state == RobotState.AVOIDING_WALLS):
+                    steer_danger(node,robot)
+                elif(robot.state == RobotState.STOPPED):
                     node.send_set_variables(motors(0,0))
+                robot.state_timer -= 1
+                if(robot.state_timer < 0 and robot.state != RobotState.STOPPED):
+                    robot.state == RobotState.FOLLOWING_PATH
                 
                 if(robot.path_follower.current_edge >= len(robot.path_follower.path)-1):
                     await node.set_variables(motors(0,0))
