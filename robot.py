@@ -2,19 +2,24 @@ from tdmclient import ClientAsync
 from path_following import get_angle_to, Odometry,PathFollow,PID
 from kalman import Kalman
 import time
+from enum import Enum
 
 import math
 start_time = time.time()
-is_on = True
-#TODO get time
+
 def get_time():
     return (time.time() - start_time)
 
+class RobotState(Enum):
+    FOLLOWING_PATH = 0,
+    AVOIDING_WALLS = 1
 class Robot:
     odometry = Odometry()
     path_follower = None
     angle_PID = PID(1,0,0)
     kalman = None
+    state = RobotState.FOLLOWING_PATH
+    state_timer = 0
 
 
     def __init__(self, x = 0, y = 0, angle = 0, path = [(0,0),(8,1)]):
@@ -27,10 +32,6 @@ class Robot:
     def update_odometry(self):
         self.odometry.x, self.odometry.y = self.kalman.get_position()
         self.odometry.angle = self.kalman.get_rotation()
-
-robot = Robot(0,0,0,[(0, 0), (1, 0),(1,1),(3,1)])
-state = 0
-state_timer = 0
 
 ### ---- HELPER FUNCTIONS FOR THYMIO ---- ###
 def motors(left, right):
@@ -87,15 +88,15 @@ def on_variables_changed(node, variables):
        # print(prox[0],prox[4],state,state_timer)
         # handle states
         if(prox[0] > obstH or prox[4] > obstH):
-            if(state == 1):
+            if(robot.state == RobotState.AVOIDING_WALLS):
                 state_timer = STATE_COOLDOWN
-            state = 1
+            robot.state = RobotState.AVOIDING_WALLS
         
         elif(prox[0] < obstL and prox[4] < obstL):
-            if(state == 0):
+            if(robot.state == RobotState.FOLLOWING_PATH):
                 state_timer = STATE_COOLDOWN
             if(STATE_COOLDOWN <= 0):
-                state = 0
+                robot.state = RobotState.FOLLOWING_PATH
 
         
 
@@ -151,7 +152,7 @@ def on_variables_changed(node, variables):
 
 with ClientAsync() as client:
     async def prog():
-        global robot, state, state_timer
+        global robot
         with await client.lock() as node:
             #Set up listener functions
             await node.watch(variables=True)
@@ -164,13 +165,13 @@ with ClientAsync() as client:
 
                 point, _ = robot.path_follower.getLookaheadEdge(robot.odometry)
                 if(is_on):
-                    if(state == 0):
+                    if(robot.state == RobotState.FOLLOWING_PATH):
                         steer(node, robot, point)
-                    elif(state == 1):
+                    elif(robot.state == RobotState.AVOIDING_WALLS):
                         steer_danger(node,robot)
-                    state_timer -= 1
-                    if(state_timer < 0):
-                        state = 0
+                    robot.state_timer -= 1
+                    if(robot.state_timer < 0):
+                        robot.state == RobotState.FOLLOWING_PATH
                 else:
                     node.send_set_variables(motors(0,0))
                 
