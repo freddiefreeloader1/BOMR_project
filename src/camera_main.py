@@ -1,11 +1,9 @@
 from computer_vision import *
 from Astar_coord import *
 from Astar import * 
-
+from main import Quit
 from enum import Enum
 
-class Quit(SystemExit):
-    pass
 class CameraState(Enum):
     WAITING = 0,
     CAPTURING_DATA = 1,
