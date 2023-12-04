@@ -13,7 +13,7 @@ def update_robot_odometry(robot,path,pos,angle):
     robot.path_follower.path = path
     robot.odometry.x = pos[0]
     robot.odometry.y = pos[1]
-    robot.odometry.angle = angle
+    robot.odometry.angle = angle  
 
 def main():
     global robot, metric_path, thymio_position, thymio_angle
@@ -28,7 +28,7 @@ def main():
 
             # If the camera has data for the robot, update it.
             if(robot.path_follower.path != metric_path):
-                update_robot_odometry(robot,metric_path,thymio_position,thymio_angle)
+                update_robot_odometry(robot,metric_path,thymio_position,-thymio_angle) #CAMERA ANGLE IS CLOCKWISE!!!
 
             # If the robot was given a path, start running.
             if(len(metric_path) > 0):
