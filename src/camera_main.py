@@ -4,6 +4,13 @@ from Astar import *
 from enum import Enum
 from common import Quit
 
+# The camera has 5 states:
+# CAPTURING DATA: starts when the user presses 'p'.
+# SETTING_UP: starts if the obstacles were captured successfully
+# DETECTING_THYMIO: starts when the user presses 'd'
+# PLANNING_PATH: runs once a thymio aruco was detected!
+# DONE: once the path is planned, jumps to the final state.
+
 class CameraState(Enum):
     WAITING = 0,
     CAPTURING_DATA = 1,
@@ -13,7 +20,7 @@ class CameraState(Enum):
     DONE = 5
 
 # Depends on your hardware! (built in laptop cameras are usually 0)
-CAMERA_NUMBER = 1
+CAMERA_NUMBER = 0
 
 cap = None
 camera_state = CameraState.WAITING
@@ -71,7 +78,7 @@ def CameraLoop():
     binary_img = preprocess_image(frame)
 
     try:
-        # The camera has 5 states:
+        # Handle the 5 states of the camera.
         if camera_state == CameraState.CAPTURING_DATA:
             capture_map, coord_to_transform, map_img, pts2 = capture_map_data(frame, binary_img, max_width, max_height)
             
@@ -81,7 +88,7 @@ def CameraLoop():
 
                 camera_state == CameraState.SETTING_UP
 
-        elif camera_state >= CameraState.SETTING_UP: #setting up, detecting thymio, and planning path
+        elif camera_state.value >= CameraState.SETTING_UP.value: #setting up, detecting thymio, and planning path
             M = cv2.getPerspectiveTransform(coord_to_transform, pts2)
             map_img = cv2.warpPerspective(frame, M, (max_width, max_height))
             

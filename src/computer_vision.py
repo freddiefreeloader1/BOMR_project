@@ -26,7 +26,7 @@ def capture_map_data(frame, binary_img, map_width, map_height):
     try:
         contours, _ = cv2.findContours(binary_img.copy(), cv2.RETR_EXTERNAL , cv2.CHAIN_APPROX_SIMPLE)
         if not contours:
-            return False, None, None
+            return False, None, None, None
 
         sorted_contours = sorted(contours, key=cv2.contourArea, reverse=True)
         largest_contour = sorted_contours[0].squeeze()
@@ -36,7 +36,7 @@ def capture_map_data(frame, binary_img, map_width, map_height):
 
         if approx_map.shape[0] != 4:
             print("The map is not found!")
-            return False, None, None
+            return False, None, None, None
 
         coord_to_transform = sort_map_points(approx_map.squeeze())
         pts2 = np.float32([[0, 0], [map_width, 0], [0, map_height], [map_width, map_height]])
@@ -47,7 +47,7 @@ def capture_map_data(frame, binary_img, map_width, map_height):
 
     except Exception as e:
         print("Error: ", e)
-        return False, None, None
+        return False, None, None, None
 
 def capture_obstacle_data(map_img, padding):
     gray_map_img = preprocess_image(map_img)
