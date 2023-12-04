@@ -12,6 +12,8 @@ class CameraState(Enum):
     PLANNING_PATH = 4,
     DONE = 5
 
+# Depends on your hardware! (built in laptop cameras are usually 0)
+CAMERA_NUMBER = 1
 
 cap = None
 camera_state = CameraState.WAITING
@@ -59,16 +61,17 @@ def camera_handle_keys():
 def CameraLoop():
     global camera_state, max_height, max_width, padding, coord_to_transform, plan_path, cell_size, start_grid, end_grid, grid, path_grid, start, end, metric_path, detect_thymio, thymio_angle, thymio_position
     ret, frame = cap.read()
-    frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
-    map_img = frame.copy()
-
     if not ret:
         print("Unable to capture video")
         raise Quit
+    
+    frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
+    map_img = frame.copy()
 
     binary_img = preprocess_image(frame)
 
     try:
+        # The camera has 5 states:
         if camera_state == CameraState.CAPTURING_DATA:
             capture_map, coord_to_transform, map_img, pts2 = capture_map_data(frame, binary_img, max_width, max_height)
             
@@ -129,7 +132,7 @@ def CameraClose():
 
 def CameraInit():
     global cap
-    cap = cv2.VideoCapture(1)
+    cap = cv2.VideoCapture(CAMERA_NUMBER)
 
 if __name__ == "__main__":
     CameraInit()
