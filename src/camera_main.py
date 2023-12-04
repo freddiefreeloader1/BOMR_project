@@ -7,8 +7,7 @@ from common import Quit
 class CameraState(Enum):
     WAITING = 0,
     CAPTURING_DATA = 1,
-    SETTING_UP = 2,
-    DONE = 3
+    SETTING_UP = 2
 
 cap = None
 camera_state = CameraState.WAITING
@@ -76,7 +75,7 @@ def CameraLoop():
 
                 camera_state == CameraState.SETTING_UP
 
-        elif camera_state == CameraState.CAPTURING_DATA:
+        elif camera_state == CameraState.SETTING_UP:
             M = cv2.getPerspectiveTransform(coord_to_transform, pts2)
             map_img = cv2.warpPerspective(frame, M, (max_width, max_height))
             
