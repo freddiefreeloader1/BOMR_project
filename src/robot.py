@@ -1,4 +1,4 @@
-from tdmclient import ClientAsync
+
 from path_following import get_angle_to, Odometry,PathFollow,PID
 from kalman import Kalman
 import time
@@ -34,6 +34,8 @@ class Robot:
         self.odometry.x, self.odometry.y = self.kalman.get_position()
         self.odometry.angle = self.kalman.get_rotation()
 
+
+robot = Robot(0,0,0,[(0, 0), (1, 0),(1,1),(3,1)])
 ### ---- HELPER FUNCTIONS FOR THYMIO ---- ###
 def motors(left, right):
     return {
@@ -53,7 +55,7 @@ def change_velocity(vel):
 def steer(node, robot ,point):
     angle = get_angle_to(robot.odometry,point)
     
-    print("TARGET: {:.2f}, ROBOT: {:.2f}, {:.2f} angle - {:.2f}".format(robot.path_follower.current_edge,robot.odometry.x,robot.odometry.y,math.degrees(robot.odometry.angle)))
+    #print("TARGET: {:.2f}, ROBOT: {:.2f}, {:.2f} angle - {:.2f}".format(robot.path_follower.current_edge,robot.odometry.x,robot.odometry.y,math.degrees(robot.odometry.angle)))
     # SPEED CONSTANTS
     forward_speed = 250
     steer_gain = 150
@@ -76,7 +78,7 @@ def steer_danger(node,robot):
 
 # Async sensor reading update
 def on_variables_changed(node, variables):
-    
+    print(variables)
     global robot
     try:
         global state, state_timer

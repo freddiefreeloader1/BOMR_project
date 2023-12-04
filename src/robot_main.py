@@ -6,22 +6,21 @@ import math
 
 # Thymio classes
 
-
-robot = Robot(0,0,0,[(0, 0), (1, 0),(1,1),(3,1)])
-client = ClientAsync()
+client = None
 node = None
 
+async def _robot_init():    
+    global client,node
+    node = await client.wait_for_node()
+    await node.lock()
+
+    #Set up listener functions
+    await node.watch(variables=True)
+    node.add_variables_changed_listener(on_variables_changed)
+
+
 def RobotInit():
-    async def prog():    
-        global client,node
-        node = await client.wait_for_node()
-        await node.lock()
-
-        #Set up listener functions
-        await node.watch(variables=True)
-        await node.add_variables_changed_listener(on_variables_changed)
-
-    client.run_async_program(prog)
+    client.run_async_program(_robot_init)
 
 def RobotLoop():
     global robot,client,node
@@ -49,13 +48,24 @@ def RobotClose():
     global node
     node.unlock()
 
-if __name__ == "__main__":
-    RobotInit()
-    # replace loop with return
-    try:
+async def RobotAll():
+    global client,node
+    with await client.lock() as node2:
+        node = node2
+        
+        await node.watch(variables=True)
+        node.add_variables_changed_listener(on_variables_changed)
+
         while True:
             RobotLoop()
-            time.sleep(0.01)
-    except Quit:
-        pass
+            await client.sleep(0.05)
+        
+
+if __name__ == "__main__":
+    with ClientAsync() as client2:
+        client = client2
+        client.run_async_program(RobotAll)
+
+    print("out")
     RobotClose()
+    exit(0)
