@@ -7,7 +7,11 @@ from common import Quit
 class CameraState(Enum):
     WAITING = 0,
     CAPTURING_DATA = 1,
-    SETTING_UP = 2
+    SETTING_UP = 2,
+    DETECTING_THYMIO = 3,
+    PLANNING_PATH = 4,
+    DONE = 5
+
 
 cap = None
 camera_state = CameraState.WAITING
@@ -49,8 +53,7 @@ def camera_handle_keys():
         print("Capturing map...")
         camera_state = CameraState.CAPTURING_DATA
     elif key == ord('d'): # Press d to detect the Thymio and start the path planning
-        detect_thymio = True
-        plan_path = True
+        camera_state = CameraState.DETECTING_THYMIO
         print('Detecting Thymio...')
 
 def CameraLoop():
@@ -75,22 +78,23 @@ def CameraLoop():
 
                 camera_state == CameraState.SETTING_UP
 
-        elif camera_state == CameraState.SETTING_UP:
+        elif camera_state >= CameraState.SETTING_UP: #setting up, detecting thymio, and planning path
             M = cv2.getPerspectiveTransform(coord_to_transform, pts2)
             map_img = cv2.warpPerspective(frame, M, (max_width, max_height))
             
             end = get_goal_position(map_img)
             # print("End", end)
 
-            if detect_thymio:
+            if camera_state == CameraState.DETECTING_THYMIO:
                 thymio_position, thymio_angle = get_thymio_info(map_img)
                 # print(f'Position: {thymio_position}, Angle: {thymio_angle}')
                 draw_thymio_position(map_img, thymio_position)
+
+                if not( thymio_position is None):
+                    camera_state = CameraState.PLANNING_PATH
             
-            if plan_path:
-                if thymio_position is None:
-                    return #continue
-                
+            if camera_state == CameraState.PLANNING_PATH:
+
                 start = thymio_position
 
                 ''' Path planning '''
@@ -98,7 +102,7 @@ def CameraLoop():
                 grid, path_grid, simplified_path, metric_path = make_path(map_img, obstacle_masks, cell_size, start, end, grid, 
                 max_width, max_height)
                 print(metric_path)
-                plan_path = False
+                camera_state = CameraState.DONE
                 
 
             # Local navigatıon code 
@@ -125,7 +129,7 @@ def CameraClose():
 
 def CameraInit():
     global cap
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(1)
 
 if __name__ == "__main__":
     CameraInit()
