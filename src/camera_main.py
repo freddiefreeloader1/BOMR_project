@@ -63,6 +63,7 @@ def camera_handle_keys():
 
 def CameraLoop():
     global camera_state, max_height, max_width, padding, coord_to_transform, cell_size, start_grid, end_grid, grid, path_grid, start, end, metric_path, thymio_angle, thymio_position, pts2
+    global grid,map_img, obstacle_masks
     ret, frame = cap.read()
     if not ret:
         print("Unable to capture video")
@@ -126,7 +127,7 @@ def CameraLoop():
         camera_handle_keys()
 
     except Exception as e:
-        print("Error: ", e)
+        raise e
 
 def CameraClose():
     global cap
