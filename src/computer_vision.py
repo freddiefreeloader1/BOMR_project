@@ -196,10 +196,10 @@ def get_thymio_info(map_img):
                 print(f"Error: {e}")
                 return None, -1
 
-    position = tuple([int(pos) for pos in position])
     if position is None:
         return None, None
     else:
+        position = tuple([int(pos) for pos in position])
         return position, angle_radians
 
 def draw_thymio_position(map_img, thymio_position):
