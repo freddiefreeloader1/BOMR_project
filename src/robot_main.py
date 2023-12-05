@@ -9,6 +9,10 @@ import math
 client = ClientAsync()
 node = None
 
+def init_robot_position(pos,angle,path):
+    global robot
+    robot = Robot(pos[0],pos[1],angle,path)
+
 def RobotInit():
     global client,node
     node = aw(client.wait_for_node())
