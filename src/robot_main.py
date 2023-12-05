@@ -63,7 +63,6 @@ async def RobotAll(shared):
         
 
 if __name__ == "__main__":
-    global shared
     RobotInit()
     s = SharedData()
     s.robot = Robot(0,0)

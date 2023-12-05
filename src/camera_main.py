@@ -26,8 +26,8 @@ cap = None
 camera_state = CameraState.WAITING
 
 # Map and obstacle detection variables
-# max_width, max_height = 1170, 735
-max_width,max_height = 600,840
+max_width, max_height = 1170, 735
+#max_width,max_height = 600,840
 padding = 50
 coord_to_transform = []
 pts2 = []

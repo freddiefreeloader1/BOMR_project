@@ -31,12 +31,13 @@ def main():
             # If the camera has data for the robot, update it.
             if((shared.robot is None and len(shared.metric_path) > 0)):
                 print("> Updating robot position")
-                init_robot_position(shared,convert_camera_to_robot(shared.thymio_position,shared.thymio_angle,shared.metric_path)) #CAMERA ANGLE IS CLOCKWISE!!!
+                a,b,c = convert_camera_to_robot(shared.thymio_position,shared.thymio_angle,shared.metric_path)
+                init_robot_position(shared,a,b,c) #CAMERA ANGLE IS CLOCKWISE!!!
             
             if(shared.thymio_position is not None and shared.robot is not None):
                 new_pos, new_angle, _ = convert_camera_to_robot(shared.thymio_position, shared.thymio_angle)
-                robot.kalman.update_position(new_pos, get_time())
-                robot.kalman.update_heading(new_angle, get_time())
+                shared.robot.kalman.update_position(new_pos, get_time())
+                shared.robot.kalman.update_heading(new_angle, get_time())
                 shared.thymio_position = None
 
             # If the robot was given a path, start running.
