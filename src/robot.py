@@ -139,9 +139,10 @@ def on_variables_changed(node, variables):
         pass  # motors not updated
 
     try:
-        acc = variables["acc"]
-        acc[0] = change_acceleration(acc[0])
-        acc[1] = change_acceleration(acc[1])
+        acc_sensor = variables["acc"]
+        acc = [0,0]
+        acc[0] = - change_acceleration(acc_sensor[1])
+        acc[1] =   change_acceleration(acc_sensor[0])
         robot.kalman.update_acceleration(data=acc[0:2],time=get_time())
     except KeyError:
         pass # acceleration not updated
