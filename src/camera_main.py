@@ -12,15 +12,15 @@ from common import Quit
 # DONE: once the path is planned, jumps to the final state.
 
 class CameraState(Enum):
-    WAITING = 0,
-    CAPTURING_DATA = 1,
-    SETTING_UP = 2,
-    DETECTING_THYMIO = 3,
-    PLANNING_PATH = 4,
+    WAITING = 0
+    CAPTURING_DATA = 1
+    SETTING_UP = 2
+    DETECTING_THYMIO = 3
+    PLANNING_PATH = 4
     DONE = 5
 
 # Depends on your hardware! (built in laptop cameras are usually 0)
-CAMERA_NUMBER = 0
+CAMERA_NUMBER = 1
 
 cap = None
 camera_state = CameraState.WAITING
@@ -32,7 +32,7 @@ coord_to_transform = []
 pts2 = []
 
 # Grid settıng
-cell_size = 20
+cell_size = 30
 start_grid = () 
 end_grid = ()
 grid = np.array([])
@@ -73,7 +73,7 @@ def CameraLoop():
     map_img = frame.copy()
 
     binary_img = preprocess_image(frame)
-
+    print(camera_state)
     try:
         # Handle the 5 states of the camera.
         if camera_state == CameraState.CAPTURING_DATA:
