@@ -1,6 +1,6 @@
 from computer_vision import *
 from camera_main import thymio_angle, thymio_position, metric_path
-from robot_main import robot, init_robot_position
+from robot_main import robot, init_robot_position, get_time
 from Astar_coord import *
 from Astar import * 
 from camera_main import CameraClose, CameraInit, CameraLoop
@@ -38,6 +38,12 @@ def main():
             if((robot is None and len(metric_path) > 0)):
                 print("> Updating robot position")
                 init_robot_position(convert_camera_to_robot(thymio_position,thymio_angle,metric_path)) #CAMERA ANGLE IS CLOCKWISE!!!
+            
+            if(thymio_position is not None and robot is not None):
+                new_pos, new_angle, _ = convert_camera_to_robot(thymio_position, thymio_angle)
+                robot.kalman.update_position(new_pos, get_time())
+                robot.kalman.update_heading(new_angle, get_time())
+                thymio_position = None
 
             # If the robot was given a path, start running.
             if(len(metric_path) > 0 and not(robot is None)):

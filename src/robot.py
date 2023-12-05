@@ -32,7 +32,7 @@ class Robot:
 
     def update_odometry(self):
         self.odometry.x, self.odometry.y = self.kalman.get_position()
-        self.odometry.angle = self.kalman.get_rotation()
+        self.odometry.angle = self.kalman.get_rotation() #TODO : mod 2pi
 
 
 robot = Robot(0,0,0,[(0, 0), (1, 0)])
