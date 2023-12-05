@@ -97,7 +97,7 @@ def CameraLoop():
                 # print(f'Position: {thymio_position}, Angle: {thymio_angle}')
                 draw_thymio_position(map_img, thymio_position)
 
-                if not( thymio_position is None):
+                if not( thymio_position is None) and camera_state == CameraState.DETECTING_THYMIO:
                     camera_state = CameraState.PLANNING_PATH
             
             if camera_state == CameraState.PLANNING_PATH:
