@@ -31,9 +31,6 @@ padding = 50
 coord_to_transform = []
 pts2 = []
 
-# Global navigation variables
-plan_path = False
-
 # Grid settıng
 cell_size = 20
 start_grid = () 
@@ -46,12 +43,11 @@ end = None # Path for local navigation
 metric_path = [] # Path for local navigation
 
 # Thymio variables
-detect_thymio = False
 thymio_position = (0, 0) # <- Kalman Filter and local navigation
 thymio_angle = 0 # <- Kalman Filter and local navigation
 
 def camera_handle_keys():
-    global camera_state, detect_thymio, plan_path
+    global camera_state
     ''' Keyboard options '''    
     key = cv2.waitKey(24)
 
@@ -66,7 +62,7 @@ def camera_handle_keys():
         print('Detecting Thymio...')
 
 def CameraLoop():
-    global camera_state, max_height, max_width, padding, coord_to_transform, plan_path, cell_size, start_grid, end_grid, grid, path_grid, start, end, metric_path, detect_thymio, thymio_angle, thymio_position
+    global camera_state, max_height, max_width, padding, coord_to_transform, cell_size, start_grid, end_grid, grid, path_grid, start, end, metric_path, thymio_angle, thymio_position, pts2
     ret, frame = cap.read()
     if not ret:
         print("Unable to capture video")
@@ -86,7 +82,7 @@ def CameraLoop():
                 obstacle_masks = capture_obstacle_data(map_img, padding)
                 print("Map and obstacles captured!")
 
-                camera_state == CameraState.SETTING_UP
+                camera_state = CameraState.SETTING_UP
 
         elif camera_state.value >= CameraState.SETTING_UP.value: #setting up, detecting thymio, and planning path
             M = cv2.getPerspectiveTransform(coord_to_transform, pts2)
