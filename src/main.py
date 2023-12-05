@@ -1,10 +1,10 @@
 from computer_vision import *
-from robot_main import robot, init_robot_position, get_time
+from robot_main import init_robot_position, get_time
 from Astar_coord import *
 from Astar import * 
 from camera_main import CameraClose, CameraInit, CameraLoop
 from robot_main import RobotClose, RobotInit, RobotLoop
-from common import Quit, SharedData
+from common import Quit, SharedData,shared
 
 # This is a simple function that hard sets the robots data.
 # TODO: initialize the kalman after this step, perhaps create a 'RobotStart(pos)'
@@ -20,7 +20,7 @@ def convert_camera_to_robot(position = None, angle = None, path = None):
 
 
 def main():
-    shared = SharedData()
+    global shared
     CameraInit()
     RobotInit()
     # replace loop with return

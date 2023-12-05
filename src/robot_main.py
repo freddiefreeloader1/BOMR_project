@@ -1,6 +1,6 @@
 from tdmclient import ClientAsync, aw
 from robot import *
-from common import Quit, SharedData
+from common import Quit, SharedData, shared
 
 import math
 
@@ -63,8 +63,11 @@ async def RobotAll(shared):
         
 
 if __name__ == "__main__":
+    global shared
     RobotInit()
-    shared = SharedData()
+    s = SharedData()
+    s.robot = Robot(0,0)
+    set_shared(s)
     try:
         while True:
             RobotLoop(shared)
