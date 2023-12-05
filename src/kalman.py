@@ -112,6 +112,14 @@ class Kalman:
     
     # Update the absolute reading of the robots angle in the world
     def update_heading(self,data, time):
+        data = data % 2 * np.pi
+        current_angle = self.kf_rot.x[0]
+        c_abs = current_angle % 2*np.pi
+        diff = ((data - c_abs) + np.pi) % (2*np.pi) + np.pi
+
+        data = current_angle + diff
+        #current_angle = self.get_rotation()
+        
         dt = time- self.time_rot
         self.time_rot = time
         self.kf_rot.H = np.array([[1,0]])
