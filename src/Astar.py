@@ -95,9 +95,9 @@ class Node:
 
 def astar_grid(maze, start, end, moves):
     
-    if maze[start[0]][start[1]] == 1:
+    '''if maze[start[0]][start[1]] == 1:
         print("Can't start from here!")
-        return None 
+        return None '''
 
     start_node = Node(None, start)
 
@@ -245,6 +245,9 @@ def make_path(map_img, obstacle_masks, cell_size, start, end, grid, map_x = 600,
     start_grid = (grid.shape[1] * start[0] // map_img.shape[1], grid.shape[0] * start[1] // map_img.shape[0])
     end_grid = (grid.shape[1] * end[0] // map_img.shape[1], grid.shape[0] * end[1] // map_img.shape[0])
     path_grid = astar_grid(grid, start_grid, end_grid, moves_8n)
+    if path_grid is None:
+        print("no path found")
+        return grid, None, None, None
     simplified_path = simplify_path(path_grid)
     metric_path = transform_grid_to_metric(simplified_path, map_x, map_y, grid)
 

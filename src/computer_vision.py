@@ -87,6 +87,7 @@ def create_grid(map_img, obstacle_masks, cell_size):
     grid_cols = int(np.ceil(map_width / cell_size))
 
     grid = np.zeros((grid_rows, grid_cols), dtype=int)
+    print(grid)
     final_obstacle_map = np.zeros_like(map_img)
 
     for obstacle_mask in obstacle_masks:
@@ -101,10 +102,11 @@ def create_grid(map_img, obstacle_masks, cell_size):
 
                 if np.any((obstacle_mask_new > 0)):
                     grid[row][col] = 1
-
-                    grid[row + 2][col + 2] = 1
-                    grid[row + 2][col - 2] = 1
-                    grid[row - 2][col + 2] = 1
+                    padding = 2
+                    grid[row + padding][col + padding] = 1
+                    grid[row + padding][col - padding] = 1
+                    grid[row - padding][col + padding] = 1
+                    grid[row - padding][col - padding] = 1
 
             except IndexError as e:
                 print(f"IndexError: {e}")
@@ -126,7 +128,7 @@ def draw_grid_on_map(map_img, grid, cell_size):
             if grid[row, col] == 1: 
                 x_start, x_end = col * cell_size, (col + 1) * cell_size
                 y_start, y_end = row * cell_size, (row + 1) * cell_size
-                cv2.rectangle(grid_map, (x_start, y_start), (x_end, y_end), color_grid, -1)
+                cv2.rectangle(grid_map, (x_start, y_start), (x_end, y_end), color_grid)
 
     return grid_map
 
@@ -140,7 +142,7 @@ def draw_grid_path(map_img, grid, path, cell_size):
             if (col,row) in path: 
                 x_start, x_end = col * cell_size, (col + 1) * cell_size
                 y_start, y_end = row * cell_size, (row + 1) * cell_size
-                cv2.rectangle(grid_path, (x_start, y_start), (x_end, y_end), color_grid, -1)
+                cv2.rectangle(grid_path, (x_start, y_start), (x_end, y_end), color_grid)
 
     return grid_path
 

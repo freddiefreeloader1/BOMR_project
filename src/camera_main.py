@@ -26,7 +26,7 @@ cap = None
 camera_state = CameraState.WAITING
 
 # Map and obstacle detection variables
-#max_width, max_height = 1170, 735
+# max_width, max_height = 1170, 735
 max_width,max_height = 600,840
 padding = 50
 coord_to_transform = []
@@ -70,7 +70,7 @@ def CameraLoop():
         print("Unable to capture video")
         raise Quit
     
-    frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
+    # frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
     map_img = frame.copy()
 
     binary_img = preprocess_image(frame)
@@ -80,6 +80,7 @@ def CameraLoop():
             capture_map, coord_to_transform, map_img, pts2 = capture_map_data(frame, binary_img, max_width, max_height)
             
             if capture_map:
+                map_img = cv2.resize(map_img, (max_width, max_height))
                 obstacle_masks = capture_obstacle_data(map_img, padding)
                 print("Map and obstacles captured!")
 
@@ -93,8 +94,9 @@ def CameraLoop():
             # print("End", end)
 
             if camera_state.value >= CameraState.DETECTING_THYMIO.value:
+                map_img = cv2.resize(map_img, (max_width, max_height)) 
                 thymio_position, thymio_angle = get_thymio_info(map_img)
-                print(f'Position: {thymio_position}, Angle: {thymio_angle}')
+                # print(f'Position: {thymio_position}, Angle: {thymio_angle}')
                 if thymio_position is not None:
                     draw_thymio_position(map_img, thymio_position)
 
@@ -119,8 +121,9 @@ def CameraLoop():
             draw_node(map_img, end, (255, 255, 0)) # <- End node
 
             map_img = draw_grid_on_map(map_img, grid, cell_size)
-            map_img = draw_grid_path(map_img, grid, path_grid, cell_size)
-            map_img = cv2.resize(map_img, (600, 400))
+            if path_grid is not None:
+                map_img = draw_grid_path(map_img, grid, path_grid, cell_size)
+            map_img = cv2.resize(map_img, (max_width-100,max_height-100))
 
             cv2.imshow('Map', map_img)
 
