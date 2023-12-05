@@ -92,7 +92,7 @@ def CameraLoop():
             end = get_goal_position(map_img)
             # print("End", end)
 
-            if camera_state == CameraState.DETECTING_THYMIO:
+            if camera_state.value >= CameraState.DETECTING_THYMIO.value:
                 thymio_position, thymio_angle = get_thymio_info(map_img)
                 # print(f'Position: {thymio_position}, Angle: {thymio_angle}')
                 draw_thymio_position(map_img, thymio_position)
