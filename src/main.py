@@ -16,7 +16,7 @@ def main():
     plan_path = False
 
     # Grid settıng
-    cell_size = 20
+    cell_size = 30
     start_grid = () 
     end_grid = ()
     grid = np.array([])
