@@ -1,4 +1,4 @@
-from tdmclient import ClientAsync
+from tdmclient import ClientAsync, aw
 from robot import *
 from common import Quit
 
@@ -9,18 +9,15 @@ import math
 client = ClientAsync()
 node = None
 
-async def _robot_init():    
+def RobotInit():
     global client,node
-    node = await client.wait_for_node()
-    await node.lock()
+    node = aw(client.wait_for_node())
+    aw(node.lock())
 
     #Set up listener functions
-    await node.watch(variables=True)
+    aw(node.watch(variables=True))
     node.add_variables_changed_listener(on_variables_changed)
 
-
-def RobotInit():
-    client.run_async_program(_robot_init)
 
 def RobotLoop():
     global robot,client,node
@@ -41,8 +38,10 @@ def RobotLoop():
         robot.state == RobotState.FOLLOWING_PATH
     
     if(robot.path_follower.current_edge >= len(robot.path_follower.path)-1):
-        node.set_variables(motors(0,0))
+        node.send_set_variables(motors(0,0))
         raise Quit
+    
+    aw(client.sleep(0.01))
 
 def RobotClose():
     global node
@@ -58,7 +57,6 @@ async def RobotAll():
 
         while True:
             RobotLoop()
-            await client.sleep(0.05)
         
 
 if __name__ == "__main__":
