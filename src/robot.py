@@ -23,7 +23,7 @@ class Robot:
     state_timer = 0
 
 
-    def __init__(self, x = 0, y = 0, angle = 0, path = [(0,0),(8,1)]):
+    def __init__(self, x = 0, y = 0, angle = 0, path = [(0,0),(0,1)]):
         self.odometry = Odometry(x,y,angle)
         self.path_follower = PathFollow(path)
         self.kalman = Kalman([x,y],angle,[0,0],[0,0],0,get_time())
@@ -35,7 +35,7 @@ class Robot:
         self.odometry.angle = self.kalman.get_rotation()
 
 
-robot = Robot(0,0,0,[(0, 0), (1, 0),(1,1),(3,1)])
+robot = Robot(0,0,0,[(0, 0), (1, 0)])
 ### ---- HELPER FUNCTIONS FOR THYMIO ---- ###
 def motors(left, right):
     return {
