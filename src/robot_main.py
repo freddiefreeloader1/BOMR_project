@@ -6,7 +6,7 @@ import math
 
 # Thymio classes
 
-client = None
+client = ClientAsync()
 node = None
 
 async def _robot_init():    
@@ -62,9 +62,13 @@ async def RobotAll():
         
 
 if __name__ == "__main__":
-    with ClientAsync() as client2:
-        client = client2
-        client.run_async_program(RobotAll)
+    RobotInit()
+    try:
+        while True:
+            RobotLoop()
+    except Quit:
+        pass
+    RobotClose()
 
     print("out")
     RobotClose()
