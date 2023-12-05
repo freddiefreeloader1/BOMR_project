@@ -1,6 +1,6 @@
 from tdmclient import ClientAsync, aw
 from robot import *
-from common import Quit
+from common import Quit, SharedData
 
 import math
 
@@ -9,9 +9,8 @@ import math
 client = ClientAsync()
 node = None
 
-def init_robot_position(pos,angle,path):
-    global robot
-    robot = Robot(pos[0],pos[1],angle,path)
+def init_robot_position(shared,pos,angle,path):
+    shared.robot = Robot(pos[0],pos[1],angle,path)
 
 def RobotInit():
     global client,node
@@ -23,25 +22,25 @@ def RobotInit():
     node.add_variables_changed_listener(on_variables_changed)
 
 
-def RobotLoop():
-    global robot,client,node
+def RobotLoop(shared):
+    global client,node
 # Update odometry:
-    robot.update_odometry()
+    shared.robot.update_odometry()
 
     # path follow loop:
 
-    point, _ = robot.path_follower.getLookaheadEdge(robot.odometry)
-    if(robot.state == RobotState.FOLLOWING_PATH):
-        steer(node, robot, point)
-    elif(robot.state == RobotState.AVOIDING_WALLS):
-        steer_danger(node,robot)
-    elif(robot.state == RobotState.STOPPED):
+    point, _ = shared.robot.path_follower.getLookaheadEdge(shared.robot.odometry)
+    if(shared.robot.state == RobotState.FOLLOWING_PATH):
+        steer(node, shared.robot, point)
+    elif(shared.robot.state == RobotState.AVOIDING_WALLS):
+        steer_danger(node,shared.robot)
+    elif(shared.robot.state == RobotState.STOPPED):
         node.send_set_variables(motors(0,0))
-    robot.state_timer -= 1
-    if(robot.state_timer < 0 and robot.state != RobotState.STOPPED):
-        robot.state == RobotState.FOLLOWING_PATH
+    shared.robot.state_timer -= 1
+    if(shared.robot.state_timer < 0 and shared.robot.state != RobotState.STOPPED):
+        shared.robot.state == RobotState.FOLLOWING_PATH
     
-    if(robot.path_follower.current_edge >= len(robot.path_follower.path)-1):
+    if(shared.robot.path_follower.current_edge >= len(shared.robot.path_follower.path)-1):
         node.send_set_variables(motors(0,0))
         raise Quit
     
@@ -51,7 +50,7 @@ def RobotClose():
     global node
     node.unlock()
 
-async def RobotAll():
+async def RobotAll(shared):
     global client,node
     with await client.lock() as node2:
         node = node2
@@ -60,14 +59,15 @@ async def RobotAll():
         node.add_variables_changed_listener(on_variables_changed)
 
         while True:
-            RobotLoop()
+            RobotLoop(shared)
         
 
 if __name__ == "__main__":
     RobotInit()
+    shared = SharedData()
     try:
         while True:
-            RobotLoop()
+            RobotLoop(shared)
     except Quit:
         pass
     RobotClose()

@@ -26,15 +26,14 @@ def main():
     # replace loop with return
     try:
         while True:
-            global robot
             # Run the camera loop
             CameraLoop(shared)
             # If the camera has data for the robot, update it.
-            if((robot is None and len(shared.metric_path) > 0)):
+            if((shared.robot is None and len(shared.metric_path) > 0)):
                 print("> Updating robot position")
-                init_robot_position(convert_camera_to_robot(shared.thymio_position,shared.thymio_angle,shared.metric_path)) #CAMERA ANGLE IS CLOCKWISE!!!
+                init_robot_position(shared,convert_camera_to_robot(shared.thymio_position,shared.thymio_angle,shared.metric_path)) #CAMERA ANGLE IS CLOCKWISE!!!
             
-            if(shared.thymio_position is not None and robot is not None):
+            if(shared.thymio_position is not None and shared.robot is not None):
                 new_pos, new_angle, _ = convert_camera_to_robot(shared.thymio_position, shared.thymio_angle)
                 robot.kalman.update_position(new_pos, get_time())
                 robot.kalman.update_heading(new_angle, get_time())
@@ -42,7 +41,7 @@ def main():
 
             # If the robot was given a path, start running.
             if(len(shared.metric_path) > 0 and not(shared.robot is None)):
-                RobotLoop()
+                RobotLoop(shared)
 
     except Quit:
         pass
