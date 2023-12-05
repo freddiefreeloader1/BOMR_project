@@ -35,7 +35,7 @@ class Robot:
         self.odometry.angle = self.kalman.get_rotation() #TODO : mod 2pi
 
 
-robot = Robot(0,0,0,[(0, 0), (1, 0)])
+robot = None
 ### ---- HELPER FUNCTIONS FOR THYMIO ---- ###
 def motors(left, right):
     return {

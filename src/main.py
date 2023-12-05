@@ -21,16 +21,17 @@ def convert_camera_to_robot(position = None, angle = None, path = None):
 
 
 def main():
-    global robot, metric_path, thymio_position, thymio_angle
 
     CameraInit()
     RobotInit()
     # replace loop with return
     try:
         while True:
+            
+            global robot, metric_path, thymio_position, thymio_angle
             # Run the camera loop
             CameraLoop()
-
+            print(metric_path,thymio_position,thymio_angle)
             # If the camera has data for the robot, update it.
             if((robot is None and len(metric_path) > 0)):
                 print("> Updating robot position")
