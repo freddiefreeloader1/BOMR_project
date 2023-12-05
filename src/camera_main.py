@@ -26,7 +26,8 @@ cap = None
 camera_state = CameraState.WAITING
 
 # Map and obstacle detection variables
-max_width, max_height = 1170, 735
+#max_width, max_height = 1170, 735
+max_width,max_height = 600,840
 padding = 50
 coord_to_transform = []
 pts2 = []
@@ -73,7 +74,6 @@ def CameraLoop():
     map_img = frame.copy()
 
     binary_img = preprocess_image(frame)
-    print(camera_state)
     try:
         # Handle the 5 states of the camera.
         if camera_state == CameraState.CAPTURING_DATA:
@@ -94,7 +94,7 @@ def CameraLoop():
 
             if camera_state.value >= CameraState.DETECTING_THYMIO.value:
                 thymio_position, thymio_angle = get_thymio_info(map_img)
-                # print(f'Position: {thymio_position}, Angle: {thymio_angle}')
+                print(f'Position: {thymio_position}, Angle: {thymio_angle}')
                 if thymio_position is not None:
                     draw_thymio_position(map_img, thymio_position)
 

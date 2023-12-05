@@ -190,14 +190,14 @@ def get_thymio_info(map_img):
                 dx = corner[1][0] - corner[0][0]  # x_tr - x_tl
                 dy = corner[1][1] - corner[0][1]  # y_tr - y_tl
                 angle_radians = np.arctan2(dy, dx)
-                # print(f"Angle: {angle_degrees}")
+                #print(f"Angle: {angle_radians}")
 
             except Exception as e:
                 print(f"Error: {e}")
                 return None, -1
 
     if position is None:
-        return None, None
+        return None, angle_radians
     else:
         position = tuple([int(pos) for pos in position])
         return position, angle_radians
