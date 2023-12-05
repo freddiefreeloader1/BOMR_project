@@ -41,11 +41,8 @@ path_grid = np.array([])
 
 start = None # Path for local navigation
 end = None # Path for local navigation
-metric_path = [] # Path for local navigation
 
 # Thymio variables
-thymio_position = (0, 0) # <- Kalman Filter and local navigation
-thymio_angle = 0 # <- Kalman Filter and local navigation
 
 def camera_handle_keys():
     global camera_state
@@ -62,8 +59,8 @@ def camera_handle_keys():
         camera_state = CameraState.DETECTING_THYMIO
         print('Detecting Thymio...')
 
-def CameraLoop():
-    global camera_state, max_height, max_width, padding, coord_to_transform, cell_size, start_grid, end_grid, grid, path_grid, start, end, metric_path, thymio_angle, thymio_position, pts2
+def CameraLoop(shared):
+    global camera_state, max_height, max_width, padding, coord_to_transform, cell_size, start_grid, end_grid, grid, path_grid, start, end, pts2
     global grid,map_img, obstacle_masks
     ret, frame = cap.read()
     if not ret:
@@ -95,23 +92,23 @@ def CameraLoop():
 
             if camera_state.value >= CameraState.DETECTING_THYMIO.value:
                 map_img = cv2.resize(map_img, (max_width, max_height)) 
-                thymio_position, thymio_angle = get_thymio_info(map_img)
+                shared.thymio_position, shared.thymio_angle = get_thymio_info(map_img)
                 # print(f'Position: {thymio_position}, Angle: {thymio_angle}')
-                if thymio_position is not None:
-                    draw_thymio_position(map_img, thymio_position)
+                if shared.thymio_position is not None:
+                    draw_thymio_position(map_img, shared.thymio_position)
 
-                if not(thymio_position is None) and camera_state == CameraState.DETECTING_THYMIO:
+                if not(shared.thymio_position is None) and camera_state == CameraState.DETECTING_THYMIO:
                     camera_state = CameraState.PLANNING_PATH
             
             if camera_state == CameraState.PLANNING_PATH:
 
-                start = thymio_position
+                start = shared.thymio_position
 
                 ''' Path planning '''
                 map_img = cv2.resize(map_img, (max_width, max_height))
-                grid, path_grid, simplified_path, metric_path = make_path(map_img, obstacle_masks, cell_size, start, end, grid, 
+                grid, path_grid, simplified_path, shared.metric_path = make_path(map_img, obstacle_masks, cell_size, start, end, grid, 
                 max_width, max_height)
-                print(metric_path)
+                print(shared.metric_path)
                 camera_state = CameraState.DONE
                 
 

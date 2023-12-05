@@ -1,11 +1,10 @@
 from computer_vision import *
-from camera_main import thymio_angle, thymio_position, metric_path
 from robot_main import robot, init_robot_position, get_time
 from Astar_coord import *
 from Astar import * 
 from camera_main import CameraClose, CameraInit, CameraLoop
 from robot_main import RobotClose, RobotInit, RobotLoop
-from common import Quit
+from common import Quit, SharedData
 
 # This is a simple function that hard sets the robots data.
 # TODO: initialize the kalman after this step, perhaps create a 'RobotStart(pos)'
@@ -21,30 +20,28 @@ def convert_camera_to_robot(position = None, angle = None, path = None):
 
 
 def main():
-
+    shared = SharedData()
     CameraInit()
     RobotInit()
     # replace loop with return
     try:
         while True:
-            
-            global robot, metric_path, thymio_position, thymio_angle
+            global robot
             # Run the camera loop
-            CameraLoop()
-            print(metric_path,thymio_position,thymio_angle)
+            CameraLoop(shared)
             # If the camera has data for the robot, update it.
-            if((robot is None and len(metric_path) > 0)):
+            if((robot is None and len(shared.metric_path) > 0)):
                 print("> Updating robot position")
-                init_robot_position(convert_camera_to_robot(thymio_position,thymio_angle,metric_path)) #CAMERA ANGLE IS CLOCKWISE!!!
+                init_robot_position(convert_camera_to_robot(shared.thymio_position,shared.thymio_angle,shared.metric_path)) #CAMERA ANGLE IS CLOCKWISE!!!
             
-            if(thymio_position is not None and robot is not None):
-                new_pos, new_angle, _ = convert_camera_to_robot(thymio_position, thymio_angle)
+            if(shared.thymio_position is not None and robot is not None):
+                new_pos, new_angle, _ = convert_camera_to_robot(shared.thymio_position, shared.thymio_angle)
                 robot.kalman.update_position(new_pos, get_time())
                 robot.kalman.update_heading(new_angle, get_time())
-                thymio_position = None
+                shared.thymio_position = None
 
             # If the robot was given a path, start running.
-            if(len(metric_path) > 0 and not(robot is None)):
+            if(len(shared.metric_path) > 0 and not(shared.robot is None)):
                 RobotLoop()
 
     except Quit:
