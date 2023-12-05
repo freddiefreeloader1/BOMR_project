@@ -13,12 +13,9 @@ from common import Quit
 def convert_camera_to_robot(position = None, angle = None, path = None):
     if angle is not None: angle = -angle
     if position is not None: 
-        position[1] = - position[1]/1000.0
-        position[0] /= 1000.
+        position = (position[0]/1000.0,-position[1]/1000.)
     if path is not None:
-        for a in path:
-            a[1] = -a[1] / 1000.
-            a[0] = a[0]/ 1000.
+        path = np.array([(p[0]/1000.0,-p[1]/1000.) for p in path])
     
     return position, angle, path
 
