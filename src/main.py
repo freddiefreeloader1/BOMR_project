@@ -22,7 +22,8 @@ def main():
             CameraLoop()
 
             # If the camera has data for the robot, update it.
-            if(robot.path_follower.path != metric_path):
+            if((robot is None and len(metric_path) > 0)):
+                print("> Updating robot position")
                 init_robot_position(metric_path,thymio_position,-thymio_angle) #CAMERA ANGLE IS CLOCKWISE!!!
 
             # If the robot was given a path, start running.
