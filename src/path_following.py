@@ -42,9 +42,9 @@ class Stream:
 # this  is its own class so i can store 
 class PathFollow:
     path = None
-    path_lookahead = 0.0005
+    path_lookahead = 0.005
     current_edge = 0
-    def __init__(self, path, path_lookahead = 0.0005):
+    def __init__(self, path, path_lookahead = 0.005):
         self.path = path
         self.path_lookahead = path_lookahead
     
