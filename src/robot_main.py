@@ -30,6 +30,7 @@ def RobotLoop(shared):
     # path follow loop:
 
     point, _ = shared.robot.path_follower.getLookaheadEdge(shared.robot.odometry)
+    shared.path_shared.append(point)
     if(shared.robot.state == RobotState.FOLLOWING_PATH):
         steer(node, shared.robot, point)
     elif(shared.robot.state == RobotState.AVOIDING_WALLS):

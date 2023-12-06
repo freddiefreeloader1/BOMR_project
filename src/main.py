@@ -66,12 +66,14 @@ def main():
     metric_path = np.array(c)
     absolute_orientation = np.array(absolute_orientation)
     kalman_history_orientation = np.array(kalman_history_orientation)
+    path_display = np.array(shared.path_shared)
 
     plt.figure(figsize=(15, 10))
 
     plt.subplot(2, 2, 1)
     plt.plot(absolute_history[:, 0], absolute_history[:, 1], label='Absolute Position')
     plt.scatter(metric_path[:, 0], metric_path[:, 1], color='red', label='Metric Path Points', marker='x')
+    plt.scatter(path_display[:,0],path_display[:,1],label = 'Path from shared',marker = 'o')
     plt.title('Absolute Position History')
     plt.xlabel('X')
     plt.ylabel('Y')

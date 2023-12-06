@@ -6,6 +6,7 @@ class SharedData():
     thymio_angle = 0
     thymio_position = (0,0)
     metric_path = []
+    path_shared = []
 
 shared = SharedData()
 
@@ -18,3 +19,4 @@ def set_shared(s):
     shared.thymio_position = s.thymio_position
     shared.thymio_angle = s.thymio_angle
     shared.metric_path = s.metric_path
+    shared.path_shared = s.path_shared
