@@ -82,7 +82,6 @@ def draw_node(map_img, position, color, radius=9):
         cv2.circle(map_img, (int(position[0]),int(position[1])), radius, color, -1)
 
 def draw_line(img, p, angle,length, color,thick=3):
-    print(p)
     cv2.line(img,(int(p[0]),int(p[1])),(int(p[0]+length*np.cos(angle)),int(p[1]+length*np.sin(angle))),color,thick)
 def create_grid(map_img, obstacle_masks, cell_size):
     map_height, map_width = map_img.shape[:2]
