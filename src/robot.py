@@ -57,8 +57,8 @@ def steer(node, robot ,point):
     
     #print("TARGET: {:.2f}, ROBOT: {:.2f}, {:.2f} angle - {:.2f}".format(shared.robot.path_follower.current_edge,shared.robot.odometry.x,shared.robot.odometry.y,math.degrees(shared.robot.odometry.angle)))
     # SPEED CONSTANTS
-    forward_speed = 130
-    steer_gain = 70
+    forward_speed = 250
+    steer_gain = 150
     steer_max = 70
 
     steer = steer_gain * angle
