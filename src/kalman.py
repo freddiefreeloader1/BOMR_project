@@ -37,7 +37,7 @@ class Kalman:
 
     def get_rotation(self):
         data = self.kf_rot.x[0]
-        data = data %2*np.pi
+        data = data %(2*np.pi)
         return data
     
     def get_position(self):
