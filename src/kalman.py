@@ -36,11 +36,13 @@ class Kalman:
         self.kf_rot.P = 100*np.eye(2)
 
     def get_rotation(self):
-        return self.kf_rot.x[0]
+        data = self.kf_rot.x[0]
+        data = data %2*np.pi
+        return data
     
     def get_position(self):
         return self.kf_pos.x[0:2]
-        
+     
     
     def _compute_kf_pos(self,data, dt):
         noise = self.ACCEL_NOISE # most dominant solution

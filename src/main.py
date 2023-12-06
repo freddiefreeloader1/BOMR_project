@@ -45,10 +45,10 @@ def main():
                 new_pos, new_angle, _ = convert_camera_to_robot(shared.thymio_position, shared.thymio_angle)
                 absolute_history.append(new_pos)
                 absolute_orientation.append(new_angle)
-                print("Absolute orientation =",new_angle)
+                print("Absolute position =",new_pos)
                 shared.robot.kalman.update_position(new_pos, get_time())
                 shared.robot.kalman.update_heading(new_angle, get_time())
-                print("Kalman orienation = ",shared.robot.kalman.get_rotation())
+                print("Kalman position= ",shared.robot.kalman.get_position())
                 kalman_history.append(shared.robot.kalman.get_position())
                 kalman_history_orientation.append(shared.robot.kalman.get_rotation())
                 shared.thymio_position = None
