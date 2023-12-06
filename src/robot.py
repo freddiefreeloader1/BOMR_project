@@ -33,7 +33,7 @@ class Robot:
 
     def update_odometry(self):
         self.odometry.x, self.odometry.y = self.kalman.get_position()
-        self.odometry.angle = self.kalman.get_rotation() #TODO : mod 2pi
+        self.odometry.angle = self.kalman.get_rotation()
 
 ### ---- HELPER FUNCTIONS FOR THYMIO ---- ###
 def motors(left, right):
@@ -63,7 +63,6 @@ def steer(node, robot ,point):
     steer = steer_gain * angle
 
     node.send_set_variables(motors(int(-steer + forward_speed ), int( steer + forward_speed)))
-
 def steer_danger(node,robot):
     prox = node.v.prox.horizontal
     # STEER CONSTANTS

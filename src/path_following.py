@@ -6,7 +6,7 @@
 import numpy as np
 
 def get_angle_to(odometry, point):
-    return ((np.arctan2(point[1]-odometry.y, point[0] - odometry.x) - odometry.angle)+np.pi)%(2*np.pi)-np.pi;
+    return ((np.arctan2(point[1]-odometry.y, point[0] - odometry.x) - odometry.angle)+np.pi)%(2*np.pi)-np.pi
 # These are classes which store data.
 class Odometry:
     x = None
@@ -42,9 +42,9 @@ class Stream:
 # this  is its own class so i can store 
 class PathFollow:
     path = None
-    path_lookahead = 0.2
+    path_lookahead = 0.0005
     current_edge = 0
-    def __init__(self, path, path_lookahead = 0.2):
+    def __init__(self, path, path_lookahead = 0.0005):
         self.path = path
         self.path_lookahead = path_lookahead
     
@@ -95,6 +95,7 @@ class PathFollow:
 
     def getLookaheadEdge(self, odometry):
         lookahead_left = self.path_lookahead
+        print(lookahead_left)
         current_path_index, distance, projection = self.getClosestEdge(odometry)
         remaining_path_edges = [(p1,p2) for p1, p2 in zip(self.path[current_path_index:], self.path[current_path_index+1:])]
 

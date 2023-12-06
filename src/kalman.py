@@ -9,6 +9,11 @@ def change_frame(body_data,body_orientation):
     accel_local = R.dot(body_data)
     return accel_local
 
+def convert_angle(data,current_angle):
+    if (current_angle<2*np.pi and current_angle > -2*np.pi): shift = 0
+    else: shift = (current_angle)//(2*np.pi)
+    return data+shift*np.pi
+
 
 class Kalman:
     time_pos = 0
@@ -16,11 +21,11 @@ class Kalman:
     kf_pos = KalmanFilter(dim_x=6, dim_z=2)
     kf_rot = KalmanFilter(dim_x=2,dim_z=1)
 
-    ACCEL_NOISE = 9.81/21
-    VEL_NOISE = 0.01
-    ROT_NOISE = 0.05
-    POS_NOISE = 0.5
-    SPIN_NOISE = 0.1
+    ACCEL_NOISE = 9.81/23
+    VEL_NOISE = 0.1
+    ROT_NOISE = 0.005
+    POS_NOISE = 0.001
+    SPIN_NOISE = 100
 
     def __init__(self, position = [0,0], heading = 0, acceleration = [0,0], velocity = [0,0], spin = 0, time = 0):
         self.time_pos = self.time_rot = time
@@ -69,6 +74,7 @@ class Kalman:
 
         self.kf_rot.predict()
         self.kf_rot.update(data)
+
     # Update the accelerometor readings from the robot
     def update_acceleration(self,data,time):
        
@@ -112,20 +118,14 @@ class Kalman:
     
     # Update the absolute reading of the robots angle in the world
     def update_heading(self,data, time):
-        data = data % 2 * np.pi
-        current_angle = self.kf_rot.x[0]
-        c_abs = current_angle % 2*np.pi
-        diff = ((data - c_abs) + np.pi) % (2*np.pi) + np.pi
-
-        data = current_angle + diff
+        data = convert_angle(data,self.kf_rot.x[0])
         #current_angle = self.get_rotation()
         
         dt = time- self.time_rot
         self.time_rot = time
         self.kf_rot.H = np.array([[1,0]])
-        self.kf_rot.R[0,0] = self.SPIN_NOISE**2
+        self.kf_rot.R[0,0] = self.ROT_NOISE**2
         self._compute_kf_rot(data,dt)
-        pass
 
     # Update the absolute position of the robot in the world
     def update_position(self, data, time):

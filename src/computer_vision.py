@@ -87,7 +87,6 @@ def create_grid(map_img, obstacle_masks, cell_size):
     grid_cols = int(np.ceil(map_width / cell_size))
 
     grid = np.zeros((grid_rows, grid_cols), dtype=int)
-    print(grid)
     final_obstacle_map = np.zeros_like(map_img)
 
     for obstacle_mask in obstacle_masks:
