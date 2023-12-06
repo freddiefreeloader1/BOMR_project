@@ -119,14 +119,13 @@ def CameraLoop(shared):
 
             try:
                 robotpoint = (1000*shared.robot.odometry.x, 1000*shared.robot.odometry.y)
-                robotangle = shared.heading
-                endpoint = (int(robotpoint[0] + 100*np.cos(robotangle)),int(robotpoint[1] + 100*np.sin(robotangle)))
-                robotpoint = (int(robotpoint[0]),int(robotpoint[1]))
-                print(robotpoint,endpoint,robotangle)
                 draw_node(map_img, robotpoint, (0, 0, 0))
-                draw_node(map_img, endpoint, (0, 255, 0))
-                cv2.line(map_img,robotpoint,endpoint, (0,0,0) ,thickness=3)
-            except Exception:
+                
+                draw_line(map_img,robotpoint,shared.heading + shared.robot.odometry.angle,100,(0,0,0))
+                
+                draw_line(map_img,robotpoint,shared.robot.odometry.angle,100,(255,255,255))
+            except Exception as e:
+                print(e)
                 pass
             
             shared.end = (end[0]/1000.0,end[1]/1000.)
@@ -137,6 +136,11 @@ def CameraLoop(shared):
             map_img = cv2.resize(map_img, (max_width-100,max_height-100))
 
             cv2.imshow('Map', map_img)
+
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        cv2.putText(frame, 'Thymio: ' + str(shared.thymio_position), (10, 30), font, 0.5, (0, 0, 0), 2)
+        cv2.putText(frame, 'Goal: ' + str(end), (10, 60), font, 0.5, (0, 0, 0), 2) 
+        cv2.putText(frame, 'Angle degrees: ' + str(shared.thymio_angle), (10, 90), font, 0.5, (0, 0, 0), 2)
 
         cv2.imshow('Original image', frame)
         camera_handle_keys()

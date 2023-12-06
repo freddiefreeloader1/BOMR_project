@@ -34,7 +34,7 @@ def RobotLoop(shared):
     shared.heading = get_angle_to(shared.robot.odometry,point)
     shared.path_shared.append(point)
     
-    node.send_set_variables(motors(0,0))
+    steer(node, shared.robot, point)
     
     aw(client.sleep(0.02))
 

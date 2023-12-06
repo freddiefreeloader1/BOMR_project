@@ -5,28 +5,10 @@
 # womp womp i use numpy :/
 import numpy as np
 
-#def get_angle_to(odometry, point):
-#    return ((np.arctan2(point[1]-odometry.y, point[0] - odometry.x) - odometry.angle)+np.pi)%(2*np.pi)-np.pi
-
-
 def get_angle_to(odometry, point):
-    # Extracting current position and orientation from odometry
-    current_x, current_y, current_angle = odometry.x, odometry.y, odometry.angle
+    return ((np.arctan2(point[1]-odometry.y, point[0] - odometry.x) - odometry.angle)+np.pi)%(2*np.pi)-np.pi
 
-    # Calculating the vector from the current position to the target point
-    delta_x = point[0] - current_x
-    delta_y = point[1] - current_y
 
-    # Calculating the angle of the vector using arctan2
-    target_angle = np.arctan2(delta_y, delta_x)
-
-    # Calculating the angle change needed to align with the target point
-    angle_change = target_angle - current_angle
-
-    # Normalizing the angle to be within the range [-pi, pi]
-    angle_change = (angle_change + np.pi) % (2 * np.pi) - np.pi
-
-    return angle_change 
 # These are classes which store data.
 class Odometry:
     x = None

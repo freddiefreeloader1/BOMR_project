@@ -13,7 +13,7 @@ import numpy as np
 # TODO: initialize the kalman after this step, perhaps create a 'RobotStart(pos)'
 
 def convert_camera_to_robot(position = None, angle = None, path = None):
-    if angle is not None: angle = angle
+    if angle is not None: angle = angle 
     if position is not None: 
         position = (position[0]/1000.0,position[1]/1000.)
     if path is not None:
@@ -56,7 +56,7 @@ def main():
             # If the robot was given a path, start running.
             if(len(shared.metric_path) > 0 and not(shared.robot is None)):
                 RobotLoop(shared)
-                print((shared.robot.odometry.x,shared.robot.odometry.y),shared.end,shared.robot.odometry.angle )
+                #print((shared.robot.odometry.x,shared.robot.odometry.y),shared.end,shared.robot.odometry.angle )
 
     except Quit:
         pass

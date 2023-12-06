@@ -79,8 +79,11 @@ def capture_obstacle_data(map_img, padding):
 
 def draw_node(map_img, position, color, radius=9):
     if position is not None:
-        cv2.circle(map_img, position, radius, color, -1)
+        cv2.circle(map_img, (int(position[0]),int(position[1])), radius, color, -1)
 
+def draw_line(img, p, angle,length, color,thick=3):
+    print(p)
+    cv2.line(img,(int(p[0]),int(p[1])),(int(p[0]+length*np.sin(angle)),int(p[1]+length*np.cos(angle))),color,thick)
 def create_grid(map_img, obstacle_masks, cell_size):
     map_height, map_width = map_img.shape[:2]
     grid_rows = int(np.ceil(map_height / cell_size))
@@ -201,7 +204,7 @@ def get_thymio_info(map_img):
         return None, angle_radians
     else:
         position = tuple([int(pos) for pos in position])
-        return position, angle_radians
+        return position, ((angle_radians - np.pi/2)%2*np.pi)
 
 def draw_thymio_position(map_img, thymio_position):
     if thymio_position is not None:
