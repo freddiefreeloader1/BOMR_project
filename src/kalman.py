@@ -12,7 +12,7 @@ def change_frame(body_data,body_orientation):
 def convert_angle(data,current_angle):
     if (current_angle<2*np.pi and current_angle > -2*np.pi): shift = 0
     else: shift = (current_angle)//(2*np.pi)
-    return data+shift*np.pi
+    return data+shift*(2*np.pi)
 
 
 class Kalman:
@@ -120,7 +120,7 @@ class Kalman:
     
     # Update the absolute reading of the robots angle in the world
     def update_heading(self,data, time):
-        data = convert_angle(data,self.kf_rot.x[0])
+        #data = convert_angle(data,self.kf_rot.x[0])
         #current_angle = self.get_rotation()
         
         dt = time- self.time_rot
