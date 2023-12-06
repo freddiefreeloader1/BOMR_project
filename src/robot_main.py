@@ -28,7 +28,7 @@ def RobotLoop(shared):
     shared.robot.update_odometry()
 
     # path follow loop:
-
+    print(shared.robot.state)
     point, _ = shared.robot.path_follower.getLookaheadEdge(shared.robot.odometry)
     shared.path_shared.append(point)
     if(shared.robot.state == RobotState.FOLLOWING_PATH):
@@ -40,12 +40,13 @@ def RobotLoop(shared):
     shared.robot.state_timer -= 1
     if(shared.robot.state_timer < 0 and shared.robot.state != RobotState.STOPPED):
         shared.robot.state == RobotState.FOLLOWING_PATH
+        steer(node, shared.robot, point)
     
     if(shared.robot.path_follower.current_edge >= len(shared.robot.path_follower.path)-1):
         node.send_set_variables(motors(0,0))
         raise Quit
     
-    aw(client.sleep(0.01))
+    aw(client.sleep(0.1))
 
 def RobotClose():
     global node
