@@ -33,7 +33,20 @@ def RobotLoop(shared):
 
     shared.path_shared.append(point)
     
-    steer(node, shared.robot, point)
+    if(shared.robot.state == RobotState.FOLLOWING_PATH):
+        steer(node, shared.robot, point)
+    elif(shared.robot.state == RobotState.AVOIDING_WALLS):
+        steer_danger(node,shared.robot)
+    elif(shared.robot.state == RobotState.STOPPED):
+        node.send_set_variables(motors(0,0))
+    shared.robot.state_timer -= 1
+    if(shared.robot.state_timer < 0 and shared.robot.state != RobotState.STOPPED):
+        shared.robot.state == RobotState.FOLLOWING_PATH
+        steer(node, shared.robot, point)
+    
+    if(shared.robot.path_follower.current_edge >= len(shared.robot.path_follower.path)-1):
+        node.send_set_variables(motors(0,0))
+        raise Quit
     
     aw(client.sleep(0.02))
 
