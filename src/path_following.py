@@ -26,7 +26,7 @@ def get_angle_to(odometry, point):
     # Normalizing the angle to be within the range [-pi, pi]
     angle_change = (angle_change + np.pi) % (2 * np.pi) - np.pi
 
-    return angle_change
+    return angle_change 
 # These are classes which store data.
 class Odometry:
     x = None
@@ -115,7 +115,6 @@ class PathFollow:
 
     def getLookaheadEdge(self, odometry):
         lookahead_left = self.path_lookahead
-        print(lookahead_left)
         current_path_index, distance, projection = self.getClosestEdge(odometry)
         remaining_path_edges = [(p1,p2) for p1, p2 in zip(self.path[current_path_index:], self.path[current_path_index+1:])]
 

@@ -117,6 +117,20 @@ def CameraLoop(shared):
             draw_node(map_img, start, (0, 73, 255)) # <- Start node
             draw_node(map_img, end, (255, 255, 0)) # <- End node
 
+            try:
+                robotpoint = (1000*shared.robot.odometry.x, 1000*shared.robot.odometry.y)
+                robotangle = shared.heading
+                endpoint = (int(robotpoint[0] + 100*np.cos(robotangle)),int(robotpoint[1] + 100*np.sin(robotangle)))
+                robotpoint = (int(robotpoint[0]),int(robotpoint[1]))
+                print(robotpoint,endpoint,robotangle)
+                draw_node(map_img, robotpoint, (0, 0, 0))
+                draw_node(map_img, endpoint, (0, 255, 0))
+                cv2.line(map_img,robotpoint,endpoint, (0,0,0) ,thickness=3)
+            except Exception:
+                pass
+            
+            shared.end = (end[0]/1000.0,end[1]/1000.)
+
             map_img = draw_grid_on_map(map_img, grid, cell_size)
             if path_grid is not None:
                 map_img = draw_grid_path(map_img, grid, path_grid, cell_size)

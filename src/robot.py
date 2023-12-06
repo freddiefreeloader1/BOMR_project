@@ -34,7 +34,7 @@ class Robot:
     def update_odometry(self):
         self.odometry.x, self.odometry.y = self.kalman.get_position()
         self.odometry.angle = self.kalman.get_rotation()
-        print('Odometery =',self.odometry.x, self.odometry.y)
+        
 
 ### ---- HELPER FUNCTIONS FOR THYMIO ---- ###
 def motors(left, right):
@@ -54,11 +54,11 @@ def change_velocity(vel):
 #Steer the robot to a point
 def steer(node, robot ,point):
     angle = get_angle_to(robot.odometry,point)
-    print('angle', angle)
+    
     #print("TARGET: {:.2f}, ROBOT: {:.2f}, {:.2f} angle - {:.2f}".format(shared.robot.path_follower.current_edge,shared.robot.odometry.x,shared.robot.odometry.y,math.degrees(shared.robot.odometry.angle)))
     # SPEED CONSTANTS
-    forward_speed = 250
-    steer_gain = 150
+    forward_speed = 130
+    steer_gain = 70
     steer_max = 70
 
     steer = steer_gain * angle

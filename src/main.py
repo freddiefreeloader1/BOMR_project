@@ -45,10 +45,10 @@ def main():
                 new_pos, new_angle, _ = convert_camera_to_robot(shared.thymio_position, shared.thymio_angle)
                 absolute_history.append(new_pos)
                 absolute_orientation.append(new_angle)
-                print("Absolute position =",new_pos)
+                
                 shared.robot.kalman.update_position(new_pos, get_time())
                 shared.robot.kalman.update_heading(new_angle, get_time())
-                print("Kalman position= ",shared.robot.kalman.get_position())
+                
                 kalman_history.append(shared.robot.kalman.get_position())
                 kalman_history_orientation.append(shared.robot.kalman.get_rotation())
                 shared.thymio_position = None
@@ -56,6 +56,7 @@ def main():
             # If the robot was given a path, start running.
             if(len(shared.metric_path) > 0 and not(shared.robot is None)):
                 RobotLoop(shared)
+                print((shared.robot.odometry.x,shared.robot.odometry.y),shared.end,shared.robot.odometry.angle )
 
     except Quit:
         pass

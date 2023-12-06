@@ -28,25 +28,15 @@ def RobotLoop(shared):
     shared.robot.update_odometry()
 
     # path follow loop:
-    print(shared.robot.state)
     point, _ = shared.robot.path_follower.getLookaheadEdge(shared.robot.odometry)
+    
+    point = shared.end
+    shared.heading = get_angle_to(shared.robot.odometry,point)
     shared.path_shared.append(point)
-    if(shared.robot.state == RobotState.FOLLOWING_PATH):
-        steer(node, shared.robot, point)
-    elif(shared.robot.state == RobotState.AVOIDING_WALLS):
-        steer_danger(node,shared.robot)
-    elif(shared.robot.state == RobotState.STOPPED):
-        node.send_set_variables(motors(0,0))
-    shared.robot.state_timer -= 1
-    if(shared.robot.state_timer < 0 and shared.robot.state != RobotState.STOPPED):
-        shared.robot.state == RobotState.FOLLOWING_PATH
-        steer(node, shared.robot, point)
     
-    if(shared.robot.path_follower.current_edge >= len(shared.robot.path_follower.path)-1):
-        node.send_set_variables(motors(0,0))
-        raise Quit
+    node.send_set_variables(motors(0,0))
     
-    aw(client.sleep(0.1))
+    aw(client.sleep(0.02))
 
 def RobotClose():
     global node
