@@ -62,10 +62,8 @@ def steer(node, robot ,point):
     steer_max = 70
 
     steer = steer_gain * angle
-    print('steering', angle, angle+robot.odometry.angle)
-
-    node.send_set_variables(motors(0,0))
-    #node.send_set_variables(motors(int(-steer + forward_speed ), int( steer + forward_speed)))
+    
+    node.send_set_variables(motors(int(-steer + forward_speed ), int( steer + forward_speed)))
 def steer_danger(node,robot):
     prox = node.v.prox.horizontal
     # STEER CONSTANTS

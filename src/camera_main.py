@@ -123,11 +123,11 @@ def CameraLoop(shared):
                 
                 draw_line(map_img,robotpoint,shared.thymio_angle,100,(0,0,0))
                 
-                draw_line(map_img,robotpoint,-shared.robot.odometry.angle,100,(255,255,255))
+                draw_line(map_img,robotpoint,-shared.heading-shared.robot.odometry.angle,100,(255,255,255))
             except Exception as e:
                 pass
             
-            shared.end = (end[0]/1000.0,end[1]/1000.)
+            shared.end = end
 
             map_img = draw_grid_on_map(map_img, grid, cell_size)
             if path_grid is not None:

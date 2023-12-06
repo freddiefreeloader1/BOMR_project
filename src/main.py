@@ -4,22 +4,13 @@ from Astar_coord import *
 from Astar import * 
 from camera_main import CameraClose, CameraInit, CameraLoop
 from robot_main import RobotClose, RobotInit, RobotLoop
-from common import Quit, SharedData,shared
+from common import Quit, SharedData,shared,convert_camera_to_robot
 
 import matplotlib.pyplot as plt
 import numpy as np
 
 # This is a simple function that hard sets the robots data.
 # TODO: initialize the kalman after this step, perhaps create a 'RobotStart(pos)'
-
-def convert_camera_to_robot(position = None, angle = None, path = None):
-    if angle is not None: angle = -angle 
-    if position is not None: 
-        position = (position[0]/1000.0, -position[1]/1000.)
-    if path is not None:
-        path = np.array([(p[0]/1000.0, -p[1]/1000.) for p in path])
-    
-    return position, angle, path
 
 
 def main():

@@ -1,6 +1,6 @@
 from tdmclient import ClientAsync, aw
 from robot import *
-from common import Quit, SharedData, shared
+from common import Quit, SharedData, shared, convert_camera_to_robot
 
 import math
 
@@ -30,8 +30,9 @@ def RobotLoop(shared):
     # path follow loop:
     point, _ = shared.robot.path_follower.getLookaheadEdge(shared.robot.odometry)
     
-    point = shared.end
+    point, _, _ = convert_camera_to_robot(shared.end,None,None)
     shared.heading = get_angle_to(shared.robot.odometry,point)
+    print(point,shared.heading)
     shared.path_shared.append(point)
     
     steer(node, shared.robot, point)
