@@ -20,6 +20,7 @@ def RobotInit():
     #Set up listener functions
     aw(node.watch(variables=True))
     node.add_variables_changed_listener(on_variables_changed)
+    node.send_set_variables(motors(0,0))
 
 
 def RobotLoop(shared):

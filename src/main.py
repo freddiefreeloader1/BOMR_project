@@ -15,8 +15,8 @@ import numpy as np
 
 def main():
     global shared
-    CameraInit()
     RobotInit()
+    CameraInit()
     kalman_history = []
     absolute_history = []
     kalman_history_orientation = []
