@@ -229,7 +229,7 @@ def make_path(map_img, obstacle_masks, cell_size, start, end, grid,  metric_padd
     simplified_path = simplify_path(path_grid)
     metric_path = transform_grid_to_metric(simplified_path, map_x, map_y, grid)
 
-    return grid, path_grid, simplified_path, metric_path
+    return grid, path_grid, simplified_path, metric_path, map_copy
 
 
 def transform_grid_to_metric(path, map_width, map_height, grid):
