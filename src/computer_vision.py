@@ -5,7 +5,7 @@ import numpy as np
 def sort_map_points(pts):
     """Sort the points of the map in the following order: top-left, top-right, bottom-left, bottom-right
 
-    Args:
+    Parameters:
         pts: a list of points representing the four corners of the map
 
     Returns:
@@ -21,7 +21,7 @@ def sort_map_points(pts):
 def preprocess_image(frame):
     """Preprocess the image by applying a bilateral filter, converting it to grayscale, applying Canny edge detection and a Gaussian blur
 
-    Args:
+    Parameters:
         frame: the image to preprocess
 
     Returns:
@@ -36,7 +36,7 @@ def preprocess_image(frame):
 def capture_map_data(frame, binary_img, map_width, map_height):
     """Capture the map data from the image by finding the largest contour, approximating it to a quadrilateral and applying a perspective transform to it
 
-    Args:
+    Parameters:
         frame: the image to capture the map data from
         binary_img: the preprocessed image
         map_width: the width of the map
@@ -52,7 +52,7 @@ def capture_map_data(frame, binary_img, map_width, map_height):
     try:
         contours, _ = cv2.findContours(binary_img.copy(), cv2.RETR_EXTERNAL , cv2.CHAIN_APPROX_SIMPLE)
         if not contours:
-            return capture_map, None, None
+            return capture_map, None, None, None
 
         sorted_contours = sorted(contours, key=cv2.contourArea, reverse=True)
         largest_contour = sorted_contours[0].squeeze()
@@ -62,7 +62,7 @@ def capture_map_data(frame, binary_img, map_width, map_height):
 
         if approx_map.shape[0] != 4:
             print("The map is not found!")
-            return capture_map, None, None
+            return capture_map, None, None, None
 
         coord_to_transform = sort_map_points(approx_map.squeeze())
         pts2 = np.float32([[0, 0], [map_width, 0], [0, map_height], [map_width, map_height]])
@@ -74,12 +74,12 @@ def capture_map_data(frame, binary_img, map_width, map_height):
 
     except Exception as e:
         print("Error: ", e)
-        return capture_map, None, None
+        return capture_map, None, None, None
 
 def capture_obstacle_data(map_img):
     """Capture the obstacle data from the image by finding the contours of the obstacles and approximating them to a shape with 5 sides or less
 
-    Args:
+    Parameters:
         map_img: the image to capture the obstacle data from
 
     Returns:
@@ -124,10 +124,23 @@ def draw_node(map_img, position, color, radius=9):
     if position is not None:
         cv2.circle(map_img, position, radius, color, -1)
 
+def draw_line(img, p, angle,length, color,thick=3):
+    """Draw a line on the map
+
+    Parameters:
+        img: the image of the map
+        p: the starting point of the line
+        angle: the angle of the line
+        length: the length of the line
+        color: the color of the line
+        thick (int, optional): thickness of the line (default: 3)
+    """
+    cv2.line(img,(int(p[0]),int(p[1])),(int(p[0]+length*np.cos(angle)),int(p[1]+length*np.sin(angle))),color,thick)
+
 def create_grid(map_img, obstacle_masks, cell_size):
     """Create a grid from the map image and the obstacle masks, adding padding to the obstacles
 
-    Args:
+    Parameters:
         map_img: the image of the map
         obstacle_masks: a list of masks representing the obstacles
         cell_size: the size of each cell in the grid
@@ -149,24 +162,39 @@ def create_grid(map_img, obstacle_masks, cell_size):
         for col in range(grid_cols):
             y_start, y_end = row * cell_size, (row + 1) * cell_size
             x_start, x_end = col * cell_size, (col + 1) * cell_size
+            if row - grid_rows + 1  ==  0 or col - grid_cols + 1  == 0 or row == 0 or col == 0: 
+                grid[row][col] = 1
             try:
                 obstacle_mask_new = final_obstacle_map[y_start:y_end, x_start:x_end]
 
                 if np.any((obstacle_mask_new > 0)):
                     grid[row][col] = 1
+                    padding = 2
+                    row_p = min(row + padding, grid_rows - 1)
+                    col_p = min(col + padding, grid_cols - 1)
+                    grid[row_p][col_p] = 1
 
-                    grid[row + 2][col + 2] = 1
-                    grid[row + 2][col - 2] = 1
-                    grid[row - 2][col + 2] = 1
+                    row_p = max(row - padding, 0)
+                    col_p = min(col + padding, grid_cols - 1)
+                    grid[row_p][col_p] = 1
 
-            except IndexError as e:
-                print(f"IndexError: {e}")
+                    row_p = min(row + padding, grid_rows - 1)
+                    col_p = max(col - padding, 0)
+                    grid[row_p][col_p] = 1
+
+                    row_p = max(row - padding, 0)
+                    col_p = max(col - padding, 0)
+                    grid[row_p][col_p] = 1
+
+            except IndexError:
+                pass
+
     return grid
 
 def draw_grid_on_map(map_img, grid, cell_size):
     """Draw the grid on the map image
 
-    Args:
+    Parameters:
         map_img: the image of the map
         grid: the grid created from the map image and the obstacle masks. It is a 2D array of 0s and 1s, where 0 represents a free cell and 1 represents an occupied cell
         cell_size: the size of each cell in the grid
@@ -189,14 +217,14 @@ def draw_grid_on_map(map_img, grid, cell_size):
             if grid[row, col] == 1: 
                 x_start, x_end = col * cell_size, (col + 1) * cell_size
                 y_start, y_end = row * cell_size, (row + 1) * cell_size
-                cv2.rectangle(grid_map, (x_start, y_start), (x_end, y_end), color_grid, -1)
+                cv2.rectangle(grid_map, (x_start, y_start), (x_end, y_end), color_grid)
 
     return grid_map
 
 def draw_grid_path(map_img, grid, path, cell_size):
     """Draw the path on the grid which is drawn on the map image
 
-    Args:
+    Parameters:
         map_img: the image of the map
         grid: the grid created from the map image and the obstacle masks.
         path: the path to draw on the map image
@@ -213,14 +241,14 @@ def draw_grid_path(map_img, grid, path, cell_size):
             if (col,row) in path: 
                 x_start, x_end = col * cell_size, (col + 1) * cell_size
                 y_start, y_end = row * cell_size, (row + 1) * cell_size
-                cv2.rectangle(grid_path, (x_start, y_start), (x_end, y_end), color_grid, -1)
+                cv2.rectangle(grid_path, (x_start, y_start), (x_end, y_end), color_grid)
 
     return grid_path
 
 def get_goal_position(map_img):
     """Get the position of the goal, first by converting the image to HSV, then by applying a mask to it to get the red color, then by finding the largest contour and approximating it to a circle
 
-    Args:
+    Parameters:
         map_img: the image of the map
 
     Returns:
@@ -257,7 +285,7 @@ def get_goal_position(map_img):
 def get_thymio_info(map_img):
     """Get the aruco marker information (center position and angle) from the image of the map which represents the Thymio
 
-    Args:
+    Parameters:
         map_img: the image of the map in which the Thymio is represented by an aruco marker
 
     Returns:
@@ -284,13 +312,16 @@ def get_thymio_info(map_img):
                 print(f"Error: {e}")
                 return None, -1
 
-    position = tuple([int(pos) for pos in position])
-    return position, angle_radians
+    if position is None:
+        return None, angle_radians
+    else:
+        position = tuple([int(pos) for pos in position])
+        return position, ((angle_radians - np.pi / 2) % (2 * np.pi))
 
 def draw_thymio_position(map_img, thymio_position):
     """Draw a circle representing the center of the Thymio on the map
 
-    Args:
+    Parameters:
         map_img: the image of the map
         thymio_position: the position of the Thymio represented as a tuple of (x, y) coordinates
     """
