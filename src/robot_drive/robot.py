@@ -74,7 +74,10 @@ def steer_danger(node,robot):
     lprox, mprox, rprox = lprox//100, mprox//100, rprox//100
     
     back = mprox * obst_stop
-    node.send_set_variables(motors(speed + obst_gain * lprox - back - obst_rescind * rprox,speed + obst_gain * rprox - back - obst_rescind * lprox))
+
+    lspeed = speed + obst_gain * lprox - back - obst_rescind * rprox
+    rspeed = speed + obst_gain * rprox - back - obst_rescind * lprox
+    node.send_set_variables(motors(lspeed,rspeed))
 
 def get_proximity_sides(prox):
     left = prox[0]*PROXIMITIY_SMOOTHING + prox[1]*(1-PROXIMITIY_SMOOTHING)
