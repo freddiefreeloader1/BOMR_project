@@ -55,8 +55,7 @@ class Node:
         return self.total_cost < other.total_cost
 
 
-
-def astar_grid(maze, start, end, moves, map_img):
+def astar_grid(maze, start, end, moves, map_copy):
     """
     A* search algorithm for finding the shortest path on a 2D grid.
 
@@ -92,27 +91,28 @@ def astar_grid(maze, start, end, moves, map_img):
 
     start_node.cost_of_move = start_node.heuristic = start_node.total_cost = 0
 
-
     end_node = Node(None, end)
 
     end_node.cost_of_move = end_node.heuristic = end_node.total_cost = 0
 
     open_list = []
     closed_set = set()
+    visited_positions = set()  # Maintain a set of visited positions
 
     heapq.heappush(open_list, start_node)
-    map_copy = map_img.copy()
+    visited_positions.add(start)
+
     while open_list:
 
-        
         current_node = heapq.heappop(open_list)
-
 
         closed_set.add(current_node.position)
 
-        cv2.circle(map_copy, (current_node.position[0], current_node.position[1]), 2, (125, 0, 255), -1)
-        cv2.imshow('Map', map_copy)
-        
+        cv2.circle(map_copy, (int((current_node.position[0] * map_copy.shape[1]) / len(maze[0])),
+                              int((current_node.position[1] * map_copy.shape[0]) / len(maze))), 2, (125, 0, 55), -1)
+        cv2.imshow('Map_copy', map_copy)
+        cv2.waitKey(1)
+
         if current_node == end_node:
             path = []
             while current_node:
@@ -123,38 +123,35 @@ def astar_grid(maze, start, end, moves, map_img):
             return path[::-1]
 
         children = [
-
             Node(current_node, (current_node.position[0] + dx, current_node.position[1] + dy))
 
-            for dx,dy in moves
+            for dx, dy in moves
             if (
 
-                0 <= current_node.position[0] + dx < len(maze[0])
+                    0 <= current_node.position[0] + dx < len(maze[0])
 
-                and 0 <= current_node.position[1] + dy < len(maze)
+                    and 0 <= current_node.position[1] + dy < len(maze)
 
-                and (maze[current_node.position[1] + dy][current_node.position[0] + dx] == 0 
+                    and maze[current_node.position[1] + dy][current_node.position[0] + dx] == 0
 
-                or maze[current_node.position[1] + dy][current_node.position[0] + dx] == "E")
-
-                and (current_node.position[0] + dx, current_node.position[1] + dy) not in closed_set
+                    and (current_node.position[0] + dx, current_node.position[1] + dy) not in closed_set
+                    and (current_node.position[0] + dx, current_node.position[1] + dy) not in visited_positions
             )
         ]
-
 
         for child in children:
 
             dx, dy = child.position[0] - current_node.position[0], child.position[1] - current_node.position[1]
 
             child.cost_of_move = current_node.cost_of_move + 1.41 if dx != 0 and dy != 0 else current_node.cost_of_move + 1
-           
-            child.heuristic = abs(child.position[0] - end_node.position[0]) \
 
-            + abs(child.position[1] - end_node.position[1])
+            child.heuristic = abs(child.position[0] - end_node.position[0]) \
+                              + abs(child.position[1] - end_node.position[1])
 
             child.total_cost = child.cost_of_move + child.heuristic
 
             heapq.heappush(open_list, child)
+            visited_positions.add(child.position)
 
 
 
@@ -219,11 +216,13 @@ def make_path(map_img, obstacle_masks, cell_size, start, end, grid, map_x = 600,
     >>> end = (300, 200)
     >>> grid, path_grid, simplified_path, metric_path = make_path(map_img, obstacle_masks, cell_size, start, end, grid)
     """
+    map_copy = map_img.copy()
     bw_map = cv2.cvtColor(map_img.copy(), cv2.COLOR_BGR2GRAY)
     grid = create_grid(bw_map, obstacle_masks, cell_size)
     start_grid = (grid.shape[1] * start[0] // map_img.shape[1], grid.shape[0] * start[1] // map_img.shape[0])
     end_grid = (grid.shape[1] * end[0] // map_img.shape[1], grid.shape[0] * end[1] // map_img.shape[0])
-    path_grid = astar_grid(grid, start_grid, end_grid, moves_8n, map_img)
+    path_grid = astar_grid(grid, start_grid, end_grid, moves_8n, map_copy)
+    
     if path_grid is None:
         print("no path found")
         return grid, None, None, None
@@ -263,4 +262,4 @@ def transform_grid_to_metric(path, map_width, map_height, grid):
 
 
 if __name__ == "__main__":
-    search()
+    pass

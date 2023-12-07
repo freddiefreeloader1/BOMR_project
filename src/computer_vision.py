@@ -151,7 +151,7 @@ def create_grid(map_img, obstacle_masks, cell_size):
     map_height, map_width = map_img.shape[:2]
     grid_rows = int(np.ceil(map_height / cell_size))
     grid_cols = int(np.ceil(map_width / cell_size))
-
+    padding = 2
     grid = np.zeros((grid_rows, grid_cols), dtype=int)
     final_obstacle_map = np.zeros_like(map_img)
 
@@ -169,7 +169,7 @@ def create_grid(map_img, obstacle_masks, cell_size):
 
                 if np.any((obstacle_mask_new > 0)):
                     grid[row][col] = 1
-                    padding = 2
+                    
                     row_p = min(row + padding, grid_rows - 1)
                     col_p = min(col + padding, grid_cols - 1)
                     grid[row_p][col_p] = 1
