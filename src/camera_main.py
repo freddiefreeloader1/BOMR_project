@@ -28,7 +28,6 @@ camera_state = CameraState.WAITING
 # Map and obstacle detection variables
 max_width, max_height = 1170, 735
 #max_width,max_height = 600,840
-padding = 50
 coord_to_transform = []
 pts2 = []
 
@@ -60,7 +59,7 @@ def camera_handle_keys():
         print('Detecting Thymio...')
 
 def CameraLoop(shared):
-    global camera_state, max_height, max_width, padding, coord_to_transform, cell_size, start_grid, end_grid, grid, path_grid, start, end, pts2
+    global camera_state, max_height, max_width, coord_to_transform, cell_size, start_grid, end_grid, grid, path_grid, start, end, pts2
     global grid,map_img, obstacle_masks
     ret, frame = cap.read()
     if not ret:
@@ -78,7 +77,7 @@ def CameraLoop(shared):
             
             if capture_map:
                 map_img = cv2.resize(map_img, (max_width, max_height))
-                obstacle_masks = capture_obstacle_data(map_img, padding)
+                obstacle_masks = capture_obstacle_data(map_img)
                 print("Map and obstacles captured!")
 
                 camera_state = CameraState.SETTING_UP
