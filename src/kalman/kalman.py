@@ -1,6 +1,8 @@
 import numpy as np
 from filterpy.kalman import KalmanFilter
 
+from util.constants import *
+
 #Change from body frame to local frame
 def change_frame(body_data,body_orientation):
     '''
@@ -36,13 +38,6 @@ class Kalman:
     accel_measurement = []
     vel_measurement = []
     spin_measurement = []
-
-    #noise components 
-    ACCEL_NOISE = 10*9.81/23
-    VEL_NOISE = 0.001
-    ROT_NOISE = 0.005
-    POS_NOISE = 0.005
-    SPIN_NOISE = 0.1
 
     def __init__(self, position = [0,0], heading = 0, acceleration = [0,0], velocity = [0,0], spin = 0, time = 0):
         self.time_pos = self.time_rot = time

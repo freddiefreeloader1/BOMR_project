@@ -18,3 +18,12 @@ ROBOT_AVOID_SENSOR_STOP = 15    #how much does the central sensor reverse the ro
 MOTOR_SENSOR_TO_SPINS = 2*math.pi/(4.6*400)
 MOTOR_SENSOR_TO_MPS = 0.0003175
 ACCELERATION_SENSOR_TO_MPSS = 9.81/21.0
+
+
+### KALMAN ###
+#noise components 
+ACCEL_NOISE = 10*9.81/23
+VEL_NOISE = 0.001
+ROT_NOISE = 0.005
+POS_NOISE = 0.005
+SPIN_NOISE = 0.1
