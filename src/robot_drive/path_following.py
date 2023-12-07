@@ -4,6 +4,7 @@
 
 # womp womp i use numpy :/
 import numpy as np
+from util.constants import PATH_LOOKAHEAD
 
 def get_angle_to(odometry, point):
     return ((np.arctan2(point[1]-odometry.y, point[0] - odometry.x) - odometry.angle)+np.pi)%(2*np.pi)-np.pi
@@ -44,9 +45,9 @@ class Stream:
 # this  is its own class so i can store 
 class PathFollow:
     path = None
-    path_lookahead = 0.1
+    path_lookahead = 0
     current_edge = 0
-    def __init__(self, path, path_lookahead = 0.1):
+    def __init__(self, path, path_lookahead = PATH_LOOKAHEAD):
         self.path = path
         self.path_lookahead = path_lookahead
     
@@ -115,20 +116,3 @@ class PathFollow:
         
         return point, current_path_index
 
-class PID:
-    p = 0
-    i = 0
-    d = 0
-    last_current = 0
-    i_sum = 0
-    def __init__(self, p, i , d):
-        self.p = p
-        self.i = i
-        self.d = d
-    def get(self, current,setpoint):
-        feedback = (setpoint - current) * self.pg - (current - self.last_current)*self.d + (self.i_sum * self.i)
-
-        i_sum += (current-self.last_current)
-        self.last_current = current
-
-        return feedback
