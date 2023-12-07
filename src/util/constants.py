@@ -1,7 +1,7 @@
 import math
 
 ### SETUP ###
-CAMERA_ID = 1
+CAMERA_ID = 0
 #size of grid cells in milimeters
 PLANNING_CELL_SIZE = 20
 #amount of padding around obstacles in milimeters
@@ -20,18 +20,18 @@ ROBOT_FOLLOW_FORWARD_SPEED = 250
 ROBOT_FOLLOW_STEER_AMOUNT = 150
 
 #avoiding constants
-ROBOT_AVOID_FORWARD_SPEED = 200
-ROBOT_AVOID_SENSOR_GAIN = 6    #how much speed do i gain for avoiding an obstacle
-ROBOT_AVOID_SENSOR_RESCIND = 12  #amount the sensor steers away the opposite wheel
-ROBOT_AVOID_SENSOR_STOP = 15    #how much does the central sensor reverse the robot
+ROBOT_AVOID_FORWARD_SPEED = 160
+ROBOT_AVOID_SENSOR_GAIN = 7    #how much speed do i gain for avoiding an obstacle
+ROBOT_AVOID_SENSOR_RESCIND = 4  #amount the sensor steers away the opposite wheel
+ROBOT_AVOID_SENSOR_STOP = 12    #how much does the central sensor reverse the robot
 
-ROBOT_AVOID_TOUCHING_WALL = 100
-PROX_TOUCHING_THRESHOLD = 3900
+ROBOT_AVOID_TOUCHING_WALL = 120
+PROX_TOUCHING_THRESHOLD = 4000
 
 PROX_DANGER_MIN = 1000    # When to stop avoiding (all sensors under this reading)
-PROX_DANGER_MAX = 2000    # A sensor above this reading
+PROX_DANGER_MAX = 1500    # A sensor above this reading
 
-STATE_COOLDOWN = 4
+STATE_COOLDOWN = 3
 
 #sensor constants
 MOTOR_SENSOR_TO_SPINS = 2*math.pi/(4.6*400)
