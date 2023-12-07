@@ -22,6 +22,14 @@ def RobotInit():
     node.add_variables_changed_listener(on_variables_changed)
     node.send_set_variables(motors(0,0))
 
+def check_kidnapping(node,shared):
+    if(node.v.prox.ground.delta[0] == 0):
+        shared.robot.kidnap_timer += 1
+    else:
+        shared.robot.kidnap_timer = 0
+
+    if(shared.robot.kidnap_timer > ROBOT_KIDNAP_TIME):
+        shared.robot.state = RobotState.KIDNAPPED
 
 def RobotLoop(shared):
     global client,node
@@ -31,11 +39,14 @@ def RobotLoop(shared):
     # path follow loop:
     point, _ = shared.robot.path_follower.getLookaheadEdge(shared.robot.odometry)
     shared.path_shared.append(point)
+
+    check_kidnapping(node,shared)
+
     if(shared.robot.state == RobotState.FOLLOWING_PATH):
         steer(node, shared.robot, point)
     elif(shared.robot.state == RobotState.AVOIDING_WALLS or shared.robot.state == RobotState.AVOIDING_WALLS_COOLDOWN):
         steer_danger(node,shared.robot)
-    elif(shared.robot.state == RobotState.STOPPED):
+    elif(shared.robot.state == RobotState.STOPPED or shared.robot.state == RobotState.KIDNAPPED):
         node.send_set_variables(motors(0,0))
     shared.robot.state_timer -= 1
     if(shared.robot.state_timer < 0 and shared.robot.state == RobotState.AVOIDING_WALLS_COOLDOWN):
@@ -44,7 +55,6 @@ def RobotLoop(shared):
     
     if(shared.robot.path_follower.current_edge >= len(shared.robot.path_follower.path)-1):
         node.send_set_variables(motors(0,0))
-        raise Quit
     
     aw(client.sleep(0.02))
 
