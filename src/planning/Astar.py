@@ -3,7 +3,7 @@ import heapq
 import timeit
 import cv2
 import matplotlib.pyplot as plt
-from computer_vision import * 
+from vision.computer_vision import * 
 import numpy as np
 import random
 

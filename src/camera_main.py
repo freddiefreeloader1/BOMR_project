@@ -1,8 +1,8 @@
-from computer_vision import *
-from Astar_coord import *
-from Astar import * 
+from vision.computer_vision import *
+from planning.Astar_coord import *
+from planning.Astar import * 
 from enum import Enum
-from common import Quit
+from util.common import Quit
 
 # The camera has 5 states:
 # CAPTURING DATA: starts when the user presses 'p'.

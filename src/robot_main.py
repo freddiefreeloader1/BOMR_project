@@ -1,6 +1,6 @@
 from tdmclient import ClientAsync, aw
-from robot import *
-from common import Quit, SharedData, shared, convert_camera_to_robot
+from robot_drive.robot import *
+from util.common import Quit, SharedData, shared, convert_camera_to_robot
 
 import math
 
