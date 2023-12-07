@@ -25,7 +25,7 @@ class Robot:
     state_timer = 0
 
 
-    def __init__(self, x = 0, y = 0, angle = 0, path = [(0,0),(0,1)]):
+    def __init__(self, x = 0, y = 0, angle = 0, path = [(0,0),(2,0)]):
         self.odometry = Odometry(x,y,angle)
         self.path_follower = PathFollow(path)
         self.kalman = Kalman([x,y],angle,[0,0],[0,0],0,get_time())

@@ -25,8 +25,8 @@ ROBOT_AVOID_SENSOR_GAIN = 12    #how much speed do i gain for avoiding an obstac
 ROBOT_AVOID_SENSOR_RESCIND = 4  #amount the sensor steers away the opposite wheel
 ROBOT_AVOID_SENSOR_STOP = 15    #how much does the central sensor reverse the robot
 
-PROX_DANGER_MIN = 10
-PROX_DANGER_MAX = 20
+PROX_DANGER_MIN = 1000    # When to stop avoiding (all sensors under this reading)
+PROX_DANGER_MAX = 2000    # A sensor above this reading
 
 STATE_COOLDOWN = 4
 
