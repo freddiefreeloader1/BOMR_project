@@ -30,6 +30,7 @@ def main():
         while True:
             # Run the camera loop
             CameraLoop(shared)
+
             # If the camera has data for the robot, update it.
             if((shared.robot is None and len(shared.metric_path) > 0)):
                 a,b,c = convert_camera_to_robot(shared.thymio_position,shared.thymio_angle,shared.metric_path)
@@ -43,20 +44,22 @@ def main():
                 
                 shared.robot.kalman.update_position(new_pos, get_time())
                 shared.robot.kalman.update_heading(new_angle, get_time())
-                
-                kalman_history.append(shared.robot.kalman.get_position())
-                kalman_history_orientation.append(shared.robot.kalman.get_rotation())
                 shared.thymio_position = None
 
             # If the robot was given a path, start running.
             if(len(shared.metric_path) > 0 and not(shared.robot is None)):
                 RobotLoop(shared)
+            #update the kalman history measurement
             if shared.robot is not None:
                 kalman_history_vel.append(shared.robot.kalman.get_velocity())
                 kalman_history_acce.append(shared.robot.kalman.get_acceleration())
+                kalman_history.append(shared.robot.kalman.get_position())
+                kalman_history_orientation.append(shared.robot.kalman.get_rotation())
                 kalman_history_spin.append(shared.robot.kalman.get_spin())
     except Quit:
         pass
+
+    #get sensor measurement history from kalman
     acc_meas = np.array(shared.robot.kalman.get_accel_meas())
     vel_meas = np.array(shared.robot.kalman.get_vel_meas())
     spin_meas = np.array(shared.robot.kalman.get_spin_meas())
