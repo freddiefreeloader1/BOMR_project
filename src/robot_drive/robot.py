@@ -15,7 +15,8 @@ def get_time():
 class RobotState(Enum):
     FOLLOWING_PATH = 0,
     AVOIDING_WALLS = 1,
-    STOPPED = 2
+    AVOIDING_WALLS_COOLDOWN = 2,
+    STOPPED = 3
 class Robot:
     odometry = Odometry()
     path_follower = None
@@ -75,8 +76,8 @@ def steer_danger(node,robot):
     
     back = mprox * obst_stop
 
-    lspeed = speed + obst_gain * lprox - back - obst_rescind * rprox
-    rspeed = speed + obst_gain * rprox - back - obst_rescind * lprox
+    lspeed = int(speed + obst_gain * lprox - back - obst_rescind * rprox)
+    rspeed = int(speed + obst_gain * rprox - back - obst_rescind * lprox)
     node.send_set_variables(motors(lspeed,rspeed))
 
 def get_proximity_sides(prox):
@@ -100,15 +101,12 @@ def on_variables_changed(node, variables):
        # print(prox[0],prox[4],state,state_timer)
         # handle states
         if(lprox > obstH or rprox > obstH):
-            if(shared.robot.state == RobotState.AVOIDING_WALLS):
-                shared.robot.state_timer = STATE_COOLDOWN
             shared.robot.state = RobotState.AVOIDING_WALLS
         
         elif(lprox < obstL and rprox < obstL):
-            if(shared.robot.state == RobotState.FOLLOWING_PATH):
+            if(shared.robot.state == RobotState.AVOIDING_WALLS):
                 shared.robot.state_timer = STATE_COOLDOWN
-            if(shared.robot.state_timer <= 0):
-                shared.robot.state = RobotState.FOLLOWING_PATH
+                shared.robot.state = RobotState.AVOIDING_WALLS_COOLDOWN
 
         
 
