@@ -127,10 +127,13 @@ def main():
     plt.legend()
 
     plt.subplot(3,3,7)
-    meas_time_camera = np.linspace(0,1,len(absolute_orientation))
-    plt.scatter(absolute_history[:,0],absolute_history[:,1],label = 'Measured position (camera)')
-    x_time = np.linspace(0,1,len(kalman_history_orientation))
-    plt.scatter(kalman_history[:,0],kalman_history[:,1],label = 'Kalman position')
+    # Decrease the size of dots using the s parameter
+    plt.scatter(absolute_history[:, 0], absolute_history[:, 1], label='Measured position (camera)', s=1)
+    plt.scatter(kalman_history[:, 0], kalman_history[:, 1], label='Kalman position', s=1)
+
+    # Connect the dots with lines
+    plt.plot(absolute_history[:, 0], absolute_history[:, 1], label='Measured position (camera)', linestyle='-', color='blue', alpha=0.5)
+    plt.plot(kalman_history[:, 0], kalman_history[:, 1], label='Kalman position', linestyle='-', color='orange', alpha=0.5)
 
     plt.title('Position Comparison')
     plt.xlabel('Arbitrary time')
