@@ -27,7 +27,7 @@ ACCELERATION_SENSOR_TO_MPSS = 9.81/21.0
 PROXIMITIY_SMOOTHING = 0.7     #use PROX_SMOOTHING of a sensor, and (1-P_SM) of the neighboring prox. sensors ( 1 - use only [0],[2],[4])
 ### KALMAN ###
 #noise components 
-ACCEL_NOISE = 10*9.81/23
+ACCEL_NOISE = 9.81/23
 VEL_NOISE = 0.001
 ROT_NOISE = 0.005
 POS_NOISE = 0.005
