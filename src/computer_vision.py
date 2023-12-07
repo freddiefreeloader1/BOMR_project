@@ -94,7 +94,7 @@ def capture_obstacle_data(map_img):
     upper_green = np.array([80, 255, 255]) 
 
     green_mask = cv2.inRange(hsv_map_img, lower_green, upper_green)
-    cv2.imshow('Obstacle detection', green_mask)
+    # cv2.imshow('Obstacle detection', green_mask)
 
     obstacle_contours, hierarchy = cv2.findContours(green_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
