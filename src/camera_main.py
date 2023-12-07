@@ -122,9 +122,9 @@ def CameraLoop(shared):
                 robotpoint = (1000*shared.robot.odometry.x, -1000*shared.robot.odometry.y)
                 draw_node(map_img, robotpoint, (0, 0, 0))
                 
-                draw_line(map_img,robotpoint,shared.thymio_angle,100,(0,0,0))
+                #draw_line(map_img,robotpoint,shared.thymio_angle,100,(0,0,0))
                 
-                draw_line(map_img,robotpoint,-shared.heading-shared.robot.odometry.angle,100,(255,255,255))
+                #draw_line(map_img,robotpoint,-shared.heading-shared.robot.odometry.angle,100,(255,255,255))
             except Exception as e:
                 pass
             
