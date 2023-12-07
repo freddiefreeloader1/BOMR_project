@@ -34,7 +34,15 @@ def main():
             # If the camera has data for the robot, update it.
             if((shared.robot is None and len(shared.metric_path) > 0)):
                 a,b,c = convert_camera_to_robot(shared.thymio_position,shared.thymio_angle,shared.metric_path)
-                init_robot_position(shared,a,b,c) 
+                init_robot_position(shared,a,b,c)
+                kalman_history_vel.append(shared.robot.kalman.get_velocity())
+                kalman_history_acce.append(shared.robot.kalman.get_acceleration())
+                kalman_history.append(shared.robot.kalman.get_position())
+                kalman_history_orientation.append(shared.robot.kalman.get_rotation())
+                kalman_history_spin.append(shared.robot.kalman.get_spin())
+                absolute_history.append(a)
+                absolute_orientation.append(b)
+
 
             #If we have new position data update the kalman
             if(shared.thymio_position is not None and shared.robot is not None):

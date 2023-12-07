@@ -28,7 +28,7 @@ class Kalman:
     spin_measurement = []
 
     #noise components 
-    ACCEL_NOISE = 9.81/23
+    ACCEL_NOISE = 10*9.81/23
     VEL_NOISE = 0.001
     ROT_NOISE = 0.005
     POS_NOISE = 0.005

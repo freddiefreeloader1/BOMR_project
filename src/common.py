@@ -119,10 +119,13 @@ def plot_data(vel_meas,acc_meas,spin_meas,kalman_history_vel,kalman_history_acce
 
     plt.scatter(absolute_history[:, 0], absolute_history[:, 1], label='Measured position (camera)', s=1)
     plt.scatter(kalman_history[:, 0], kalman_history[:, 1], label='Kalman position', s=1)
+    # Connect the dots with lines
+    plt.plot(absolute_history[:, 0], absolute_history[:, 1], label='Measured position (camera)', linestyle='-', color='blue', alpha=0.5)
+    plt.plot(kalman_history[:, 0], kalman_history[:, 1], label='Kalman position', linestyle='-', color='orange', alpha=0.5)
 
     plt.title('Position Comparison')
-    plt.xlabel('Arbitrary time')
-    plt.ylabel('position [m]')
+    plt.xlabel('X[m]')
+    plt.ylabel('Y [m]')
     plt.legend()
     
     plt.tight_layout()
