@@ -1,123 +1,85 @@
 from computer_vision import *
+from robot_main import init_robot_position, get_time
 from Astar_coord import *
 from Astar import * 
+from camera_main import CameraClose, CameraInit, CameraLoop
+from robot_main import RobotClose, RobotInit, RobotLoop
+from common import Quit, SharedData,shared,convert_camera_to_robot,plot_data
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+# This is a simple function that hard sets the robots data.
+# TODO: initialize the kalman after this step, perhaps create a 'RobotStart(pos)'
+
 
 def main():
-    cap = cv2.VideoCapture(1)
+    global shared
+    RobotInit()
+    CameraInit()
+
+    kalman_history = []
+    absolute_history = []
+    kalman_history_orientation = []
+    kalman_history_acce = []
+    kalman_history_vel = []
+    kalman_history_spin = []
+    absolute_orientation = []
+    # replace loop with return
+    try:
+        while True:
+            # Run the camera loop
+            CameraLoop(shared)
+
+            # If the camera has data for the robot, update it.
+            if((shared.robot is None and len(shared.metric_path) > 0)):
+                a,b,c = convert_camera_to_robot(shared.thymio_position,shared.thymio_angle,shared.metric_path)
+                init_robot_position(shared,a,b,c)
+                kalman_history_vel.append(shared.robot.kalman.get_velocity())
+                kalman_history_acce.append(shared.robot.kalman.get_acceleration())
+                kalman_history.append(shared.robot.kalman.get_position())
+                kalman_history_orientation.append(shared.robot.kalman.get_rotation())
+                kalman_history_spin.append(shared.robot.kalman.get_spin())
+                absolute_history.append(a)
+                absolute_orientation.append(b)
+
+
+            #If we have new position data update the kalman
+            if(shared.thymio_position is not None and shared.robot is not None):
+                new_pos, new_angle, _ = convert_camera_to_robot(shared.thymio_position, shared.thymio_angle)
+                absolute_history.append(new_pos)
+                absolute_orientation.append(new_angle)
+                
+                shared.robot.kalman.update_position(new_pos, get_time())
+                shared.robot.kalman.update_heading(new_angle, get_time())
+                shared.thymio_position = None
+
+            # If the robot was given a path, start running.
+            if(len(shared.metric_path) > 0 and not(shared.robot is None)):
+                RobotLoop(shared)
+            #update the kalman history measurement
+            if shared.robot is not None:
+                kalman_history_vel.append(shared.robot.kalman.get_velocity())
+                kalman_history_acce.append(shared.robot.kalman.get_acceleration())
+                kalman_history.append(shared.robot.kalman.get_position())
+                kalman_history_orientation.append(shared.robot.kalman.get_rotation())
+                kalman_history_spin.append(shared.robot.kalman.get_spin())
+    except Quit:
+        pass
+
+    #get sensor measurement history from kalman
+    acc_meas = np.array(shared.robot.kalman.get_accel_meas())
+    vel_meas = np.array(shared.robot.kalman.get_vel_meas())
+    spin_meas = np.array(shared.robot.kalman.get_spin_meas())
+    metric_path = c
+    path_shared = shared.path_shared
+    plot_data (vel_meas,acc_meas,spin_meas,kalman_history_vel,kalman_history_acce,
+               kalman_history_spin, absolute_history, kalman_history, metric_path,absolute_orientation,kalman_history_orientation, path_shared)
     
-    # Map and obstacle detection variables
-    capture_data, setup_finished = False, False
-    max_width, max_height = 1170, 735
-    padding = 50
-    coord_to_transform = []
-    pts2 = []
-
-    # Global navigation variables
-    plan_path = False
-
-    # Grid settıng
-    cell_size = 30
-    start_grid = () 
-    end_grid = ()
-    grid = np.array([])
-    path_grid = np.array([])
     
-    start = None # Path for local navigation
-    end = None # Path for local navigation
-    metric_path = [] # Path for local navigation
-
-    # Thymio variables
-    detect_thymio = False
-    thymio_position = (0, 0) # <- Kalman Filter and local navigation
-    thymio_angle = 0 # <- Kalman Filter and local navigation
-
-    while True:
-
-        ret, frame = cap.read()
-        frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
-        map_img = frame.copy()
-
-        if not ret:
-            print("Unable to capture video")
-            break
-
-        binary_img = preprocess_image(frame)
-
-        try:
-            if capture_data:
-                capture_map, coord_to_transform, map_img, pts2 = capture_map_data(frame, binary_img, max_width, max_height)
-                
-                if capture_map:
-                    obstacle_masks = capture_obstacle_data(map_img, padding)
-                    print("Map and obstacles captured!")
-
-                    capture_data = False
-                    setup_finished = True
-
-            elif setup_finished:
-                M = cv2.getPerspectiveTransform(coord_to_transform, pts2)
-                map_img = cv2.warpPerspective(frame, M, (max_width, max_height))
-                
-                end = get_goal_position(map_img)
-                # print("End", end)
-
-                if detect_thymio:
-                    thymio_position, thymio_angle = get_thymio_info(map_img)
-                    # print(f'Position: {thymio_position}, Angle: {thymio_angle}')
-                    draw_thymio_position(map_img, thymio_position)
-                
-                if plan_path:
-                    if thymio_position is None:
-                        continue
-                    
-                    start = thymio_position
-
-                    ''' Path planning '''
-                    map_img = cv2.resize(map_img, (max_width, max_height))
-                    grid, path_grid, simplified_path, metric_path = make_path(map_img, obstacle_masks, cell_size, start, end, grid, 
-                    max_width, max_height)
-                    print(metric_path)
-                    plan_path = False
-                    
-
-                # Local navigatıon code 
-
-                draw_node(map_img, start, (0, 73, 255)) # <- Start node
-                draw_node(map_img, end, (255, 255, 0)) # <- End node
- 
-                map_img = draw_grid_on_map(map_img, grid, cell_size)
-                map_img = draw_grid_path(map_img, grid, path_grid, cell_size)
-                map_img = cv2.resize(map_img, (600, 400))
-
-                cv2.imshow('Map', map_img)
-
-            cv2.imshow('Original image', frame)
-
-            ''' Keyboard options '''
-            key = cv2.waitKey(24)
-
-            if key == ord('q'):
-                print("Quitting...")
-                break
-            elif key == ord('p'): # Press p to prepare the map and obstacles
-                print("Capturing map...")
-                capture_data = True
-            elif key == ord('d'): # Press d to detect the Thymio and start the path planning
-                detect_thymio = True
-                plan_path = True
-                print('Detecting Thymio...')
-
-        except Exception as e:
-            print("Error: ", e)
-            continue
-
-    cap.release()
-    cv2.destroyAllWindows()
-    cv2.waitKey(1)
+    # A quit has been called (unlock that thymio!!!!)
+    CameraClose()
+    RobotClose()
 
 if __name__ == "__main__":
     main()
-        
-        
-        
-     

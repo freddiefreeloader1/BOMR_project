@@ -1,23 +1,30 @@
-from tdmclient import ClientAsync
+
 from path_following import get_angle_to, Odometry,PathFollow,PID
 from kalman import Kalman
 import time
+from enum import Enum
+from common import get_shared, set_shared
 
 import math
 start_time = time.time()
-is_on = True
-#TODO get time
+
 def get_time():
     return (time.time() - start_time)
 
+class RobotState(Enum):
+    FOLLOWING_PATH = 0,
+    AVOIDING_WALLS = 1,
+    STOPPED = 2
 class Robot:
     odometry = Odometry()
     path_follower = None
     angle_PID = PID(1,0,0)
     kalman = None
+    state = RobotState.FOLLOWING_PATH
+    state_timer = 0
 
 
-    def __init__(self, x = 0, y = 0, angle = 0, path = [(0,0),(8,1)]):
+    def __init__(self, x = 0, y = 0, angle = 0, path = [(0,0),(0,1)]):
         self.odometry = Odometry(x,y,angle)
         self.path_follower = PathFollow(path)
         self.kalman = Kalman([x,y],angle,[0,0],[0,0],0,get_time())
@@ -27,10 +34,7 @@ class Robot:
     def update_odometry(self):
         self.odometry.x, self.odometry.y = self.kalman.get_position()
         self.odometry.angle = self.kalman.get_rotation()
-
-robot = Robot(0,0,0,[(0, 0), (1, 0),(1,1),(3,1)])
-state = 0
-state_timer = 0
+        
 
 ### ---- HELPER FUNCTIONS FOR THYMIO ---- ###
 def motors(left, right):
@@ -51,16 +55,15 @@ def change_velocity(vel):
 def steer(node, robot ,point):
     angle = get_angle_to(robot.odometry,point)
     
-    print("TARGET: {:.2f}, ROBOT: {:.2f}, {:.2f} angle - {:.2f}".format(robot.path_follower.current_edge,robot.odometry.x,robot.odometry.y,math.degrees(robot.odometry.angle)))
+    #print("TARGET: {:.2f}, ROBOT: {:.2f}, {:.2f} angle - {:.2f}".format(shared.robot.path_follower.current_edge,shared.robot.odometry.x,shared.robot.odometry.y,math.degrees(shared.robot.odometry.angle)))
     # SPEED CONSTANTS
     forward_speed = 250
     steer_gain = 150
     steer_max = 70
 
     steer = steer_gain * angle
-
+    
     node.send_set_variables(motors(int(-steer + forward_speed ), int( steer + forward_speed)))
-
 def steer_danger(node,robot):
     prox = node.v.prox.horizontal
     # STEER CONSTANTS
@@ -74,28 +77,26 @@ def steer_danger(node,robot):
 
 # Async sensor reading update
 def on_variables_changed(node, variables):
-    
-    global robot
+    shared = get_shared()
     try:
-        global state, state_timer
         #Proximity has been updated
         prox = variables["prox.horizontal"]
         # PROXIMITY CONSTANTS
         obstL = 10
         obstH = 20
-        STATE_COOLDOWN = 10
+        STATE_COOLDOWN = 4
        # print(prox[0],prox[4],state,state_timer)
         # handle states
         if(prox[0] > obstH or prox[4] > obstH):
-            if(state == 1):
-                state_timer = STATE_COOLDOWN
-            state = 1
+            if(shared.robot.state == RobotState.AVOIDING_WALLS):
+                shared.robot.state_timer = STATE_COOLDOWN
+            shared.robot.state = RobotState.AVOIDING_WALLS
         
         elif(prox[0] < obstL and prox[4] < obstL):
-            if(state == 0):
-                state_timer = STATE_COOLDOWN
-            if(STATE_COOLDOWN <= 0):
-                state = 0
+            if(shared.robot.state == RobotState.FOLLOWING_PATH):
+                shared.robot.state_timer = STATE_COOLDOWN
+            if(shared.robot.state_timer <= 0):
+                shared.robot.state = RobotState.FOLLOWING_PATH
 
         
 
@@ -122,61 +123,31 @@ def on_variables_changed(node, variables):
         dtheta = (right_speed - left_speed)*constant_spin
         #dtheta = 2*math.pi/(4.6*(right_speed - left_speed))
         #2*pi/4.6 = (400)*x 
-        robot.kalman.update_spin(data=dtheta,time=get_time())
+        shared.robot.kalman.update_spin(data=dtheta,time=get_time())
         
 
         avr_speed = (right_speed + left_speed)/2
         avr_speed = change_velocity(avr_speed)
         speed = [avr_speed,0]
-        robot.kalman.update_velocity(data = speed,time=get_time())
+        shared.robot.kalman.update_velocity(data = speed,time=get_time())
         
     
     except KeyError:
         pass  # motors not updated
 
     try:
-        acc = variables["acc"]
-        acc[0] = change_acceleration(acc[0])
-        acc[1] = change_acceleration(acc[1])
-        robot.kalman.update_acceleration(data=acc[0:2],time=get_time())
+        acc_sensor = variables["acc"]
+        acc = [0,0]
+        acc[0] = - change_acceleration(acc_sensor[1])
+        acc[1] =   change_acceleration(acc_sensor[0])
+        shared.robot.kalman.update_acceleration(data=acc[0:2],time=get_time())
     except KeyError:
         pass # acceleration not updated
     try:
-        global is_on
         b = variables["button.center"]
         if(b[0]):
-            is_on = not is_on
+            shared.robot.state = RobotState.FOLLOWING_PATH if (shared.robot.state == RobotState.STOPPED) else RobotState.STOPPED
     except KeyError:
         pass 
+    set_shared(shared)
 
-with ClientAsync() as client:
-    async def prog():
-        global robot, state, state_timer
-        with await client.lock() as node:
-            #Set up listener functions
-            await node.watch(variables=True)
-            node.add_variables_changed_listener(on_variables_changed)
-            while True:
-                # Update odometry:
-                robot.update_odometry()
-
-                # path follow loop:
-
-                point, _ = robot.path_follower.getLookaheadEdge(robot.odometry)
-                if(is_on):
-                    if(state == 0):
-                        steer(node, robot, point)
-                    elif(state == 1):
-                        steer_danger(node,robot)
-                    state_timer -= 1
-                    if(state_timer < 0):
-                        state = 0
-                else:
-                    node.send_set_variables(motors(0,0))
-                
-                if(robot.path_follower.current_edge >= len(robot.path_follower.path)-1):
-                    await node.set_variables(motors(0,0))
-                    break
-                await client.sleep(0.05)
-    
-    client.run_async_program(prog)
