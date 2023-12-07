@@ -13,17 +13,21 @@ def get_time():
     return (time.time() - start_time)
 
 class RobotState(Enum):
-    FOLLOWING_PATH = 0,
-    AVOIDING_WALLS = 1,
-    AVOIDING_WALLS_COOLDOWN = 2,
+    FOLLOWING_PATH = 0
+    AVOIDING_WALLS = 1
+    AVOIDING_WALLS_COOLDOWN = 2
     STOPPED = 3
+    KIDNAPPED = 4
+    KIDNAPPED_RETURNED = 5
+
 class Robot:
     odometry = Odometry()
     path_follower = None
     kalman = None
     state = RobotState.FOLLOWING_PATH
     state_timer = 0
-
+    kidnap_timer = 0
+    return_kidnap_timer = 0
 
     def __init__(self, x = 0, y = 0, angle = 0, path = [(0,0),(2,0)]):
         self.odometry = Odometry(x,y,angle)
@@ -92,6 +96,8 @@ def get_proximity_sides(prox):
 # Async sensor reading update
 def on_variables_changed(node, variables):
     shared = get_shared()
+    if(shared.robot.state == RobotState.KIDNAPPED):
+        return
     try:
         #Proximity has been updated
         prox = variables["prox.horizontal"]
@@ -103,6 +109,11 @@ def on_variables_changed(node, variables):
         
        # print(prox[0],prox[4],state,state_timer)
         # handle states
+
+        #dont switch to avoiding walls if stopped already
+        if(shared.robot.state == RobotState.STOPPED):
+            raise KeyError
+
         if(lprox > obstH or rprox > obstH or mprox > obstH):
             shared.robot.state = RobotState.AVOIDING_WALLS
         
