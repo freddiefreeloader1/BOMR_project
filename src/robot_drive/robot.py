@@ -80,12 +80,13 @@ def steer_danger(node,robot):
 
     lspeed = int(speed + obst_gain * lprox - back - obst_rescind * rprox)
     rspeed = int(speed + obst_gain * rprox - back - obst_rescind * lprox)
+    
     node.send_set_variables(motors(lspeed,rspeed))
 
 def get_proximity_sides(prox):
-    left = prox[0]*PROXIMITIY_SMOOTHING + prox[1]*(1-PROXIMITIY_SMOOTHING)
-    mid = prox[2]*PROXIMITIY_SMOOTHING + prox[1]*(1-PROXIMITIY_SMOOTHING)/2 + prox[3]*(1-PROXIMITIY_SMOOTHING)/2
-    right = prox[4]*PROXIMITIY_SMOOTHING + prox[3]*(1-PROXIMITIY_SMOOTHING)
+    left = max(prox[0], prox[1])
+    right = max(prox[4],prox[3])
+    mid = prox[2] + prox[1]*(1-PROXIMITIY_SMOOTHING)/2 + prox[3]*(1-PROXIMITIY_SMOOTHING)/2
     return left, mid, right
 
 # Async sensor reading update
