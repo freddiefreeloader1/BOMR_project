@@ -31,11 +31,12 @@ def main():
         while True:
             # Run the camera loop
             CameraLoop(shared)
-
-            if(shared.thymio_position is not None and shared.robot.state == RobotState.KIDNAPPED_RETURNED):
-                shared.metric_path = []
-                set_camera_state(CameraState.PLANNING_PATH)
-                shared.robot = None
+            if shared.robot is not None:
+                print(shared.thymio_position, shared.robot.state)
+                if(shared.thymio_position is not None and shared.robot.state == RobotState.KIDNAPPED_RETURNED):
+                    shared.metric_path = []
+                    set_camera_state(CameraState.DETECTING_THYMIO)
+                    shared.robot = None
 
             # If the camera has data for the robot, update it.
             if((shared.robot is None and len(shared.metric_path) > 0)):

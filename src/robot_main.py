@@ -69,6 +69,7 @@ def RobotLoop(shared):
         steer(node, shared.robot, point)
     
     if(shared.robot.path_follower.current_edge >= len(shared.robot.path_follower.path)-1):
+        shared.robot.state = RobotState.STOPPED 
         node.send_set_variables(motors(0,0))
     
     aw(client.sleep(0.02))
