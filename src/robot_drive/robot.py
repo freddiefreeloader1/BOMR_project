@@ -96,6 +96,8 @@ def get_proximity_sides(prox):
 # Async sensor reading update
 def on_variables_changed(node, variables):
     shared = get_shared()
+    if(shared.robot.state == RobotState.KIDNAPPED):
+        return
     try:
         #Proximity has been updated
         prox = variables["prox.horizontal"]
@@ -107,6 +109,11 @@ def on_variables_changed(node, variables):
         
        # print(prox[0],prox[4],state,state_timer)
         # handle states
+
+        #dont switch to avoiding walls if stopped already
+        if(shared.robot.state == RobotState.STOPPED):
+            raise KeyError
+
         if(lprox > obstH or rprox > obstH or mprox > obstH):
             shared.robot.state = RobotState.AVOIDING_WALLS
         
