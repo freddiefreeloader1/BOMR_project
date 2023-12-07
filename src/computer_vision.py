@@ -98,19 +98,33 @@ def create_grid(map_img, obstacle_masks, cell_size):
         for col in range(grid_cols):
             y_start, y_end = row * cell_size, (row + 1) * cell_size
             x_start, x_end = col * cell_size, (col + 1) * cell_size
+            if row - grid_rows - 1 ==  0 or col - grid_cols - 1 == 0: 
+                grid[row][col] = 1
             try:
                 obstacle_mask_new = final_obstacle_map[y_start:y_end, x_start:x_end]
 
                 if np.any((obstacle_mask_new > 0)):
                     grid[row][col] = 1
                     padding = 2
-                    grid[row + padding][col + padding] = 1
-                    grid[row + padding][col - padding] = 1
-                    grid[row - padding][col + padding] = 1
-                    grid[row - padding][col - padding] = 1
+                    row_p = min(row + padding, grid_rows - 1)
+                    col_p = min(col + padding, grid_cols - 1)
+                    grid[row_p][col_p] = 1
 
-            except IndexError as e:
-                print(f"IndexError: {e}")
+                    row_p = max(row - padding, 0)
+                    col_p = min(col + padding, grid_cols - 1)
+                    grid[row_p][col_p] = 1
+
+                    row_p = min(row + padding, grid_rows - 1)
+                    col_p = max(col - padding, 0)
+                    grid[row_p][col_p] = 1
+
+                    row_p = max(row - padding, 0)
+                    col_p = max(col - padding, 0)
+                    grid[row_p][col_p] = 1
+
+            except IndexError:
+                pass
+
     return grid
 
 def draw_grid_on_map(map_img, grid, cell_size):
