@@ -2,8 +2,9 @@ from vision.computer_vision import *
 from robot_main import init_robot_position, get_time
 from planning.Astar_coord import *
 from planning.Astar import * 
-from camera_main import CameraClose, CameraInit, CameraLoop
+from camera_main import CameraClose, CameraInit, CameraLoop, CameraState, get_camera_state, set_camera_state
 from robot_main import RobotClose, RobotInit, RobotLoop
+from robot_drive.robot import RobotState
 from util.common import Quit, SharedData,shared,convert_camera_to_robot,plot_data
 
 import matplotlib.pyplot as plt
@@ -30,6 +31,14 @@ def main():
         while True:
             # Run the camera loop
             CameraLoop(shared)
+
+            if shared.robot is not None:
+                print(shared.thymio_position, shared.robot.state)
+                if(shared.thymio_position is not None and shared.robot.state == RobotState.KIDNAPPED_RETURNED):
+                    shared.metric_path = []
+                    set_camera_state(CameraState.DETECTING_THYMIO)
+                    shared.robot = None
+                    print("entered if statement", get_camera_state())
 
             # If the camera has data for the robot, update it.
             if((shared.robot is None and len(shared.metric_path) > 0)):
