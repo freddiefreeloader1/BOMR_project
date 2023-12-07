@@ -32,6 +32,7 @@ def main():
             # Run the camera loop
             CameraLoop(shared)
 
+
             if(shared.thymio_position is not None and shared.robot.state == RobotState.KIDNAPPED_RETURNED):
                 shared.metric_path = []
                 set_camera_state(CameraState.PLANNING_PATH)
