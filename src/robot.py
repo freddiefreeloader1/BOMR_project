@@ -73,7 +73,7 @@ def steer_danger(node,robot):
     obst_stop = 15
 
     back = (prox[2]//100) * obst_stop
-    node.send_set_variables(motors(speed + obst_gain * (prox[1] // 100) - back - obst_rescind * (prox[3]//100),speed + obst_gain * (prox[3] // 100) - back - obst_rescind * (prox[1]//100)))
+    node.send_set_variables(motors(speed + obst_gain * (prox[0] // 100) - back - obst_rescind * (prox[4]//100),speed + obst_gain * (prox[4] // 100) - back - obst_rescind * (prox[0]//100)))
 
 # Async sensor reading update
 def on_variables_changed(node, variables):
@@ -87,12 +87,12 @@ def on_variables_changed(node, variables):
         STATE_COOLDOWN = 4
        # print(prox[0],prox[4],state,state_timer)
         # handle states
-        if(prox[1] > obstH or prox[3] > obstH):
+        if(prox[0] > obstH or prox[4] > obstH):
             if(shared.robot.state == RobotState.AVOIDING_WALLS):
                 shared.robot.state_timer = STATE_COOLDOWN
             shared.robot.state = RobotState.AVOIDING_WALLS
         
-        elif(prox[1] < obstL and prox[3] < obstL):
+        elif(prox[0] < obstL and prox[4] < obstL):
             if(shared.robot.state == RobotState.FOLLOWING_PATH):
                 shared.robot.state_timer = STATE_COOLDOWN
             if(shared.robot.state_timer <= 0):
