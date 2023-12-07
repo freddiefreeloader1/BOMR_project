@@ -137,7 +137,7 @@ def draw_line(img, p, angle,length, color,thick=3):
     """
     cv2.line(img,(int(p[0]),int(p[1])),(int(p[0]+length*np.cos(angle)),int(p[1]+length*np.sin(angle))),color,thick)
 
-def create_grid(map_img, obstacle_masks, cell_size):
+def create_grid(map_img, obstacle_masks, cell_size, metric_padding):
     """Create a grid from the map image and the obstacle masks, adding padding to the obstacles
 
     Parameters:
@@ -151,7 +151,7 @@ def create_grid(map_img, obstacle_masks, cell_size):
     map_height, map_width = map_img.shape[:2]
     grid_rows = int(np.ceil(map_height / cell_size))
     grid_cols = int(np.ceil(map_width / cell_size))
-    padding = 2
+    padding = int(metric_padding / cell_size)
     grid = np.zeros((grid_rows, grid_cols), dtype=int)
     final_obstacle_map = np.zeros_like(map_img)
 
