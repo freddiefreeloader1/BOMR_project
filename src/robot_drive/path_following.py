@@ -92,23 +92,35 @@ class PathFollow:
                 best_distance = distance
                 best_index = index
                 best_projection = (projection, t)
-        #print(best_distance,best_index,self.current_edge,[(a,b,c) for a,b,c in zip(self.path[:self.current_edge+2], self.path[1: self.current_edge + 2], range(len(self.path)-1))],self.path[:self.current_edge+2])
+        
         return best_index, best_distance, best_projection
     
 
     def getLookaheadEdge(self, odometry):
+        # Get the closest point on the path from the getClosestEdge function
         lookahead_left = self.path_lookahead
         current_path_index, distance, projection = self.getClosestEdge(odometry)
+
+        # Create the pairing of remaining edges
         remaining_path_edges = [(p1,p2) for p1, p2 in zip(self.path[current_path_index:], self.path[current_path_index+1:])]
 
+        # Move the projection forward along the paths.
         point = np.array(projection[0])
+        # Do this while there is still distance to move forward and we havent reached the goal yet
         while(lookahead_left > 0 and len(remaining_path_edges)>0):
+
+            #Remaining distance on the current edge
             curr_edge_remainder = np.linalg.norm(np.array(point)-remaining_path_edges[0][1])
+
+            # If the remaining distance on this edge is smaller than the amount we want to travel, snap to it's end
             if(curr_edge_remainder <= lookahead_left):
+                # Subtract the distance
                 lookahead_left -= curr_edge_remainder
+                # Jump to the end of this edge
                 point = remaining_path_edges[0][1]
                 remaining_path_edges = remaining_path_edges[1:]
             else:
+                # Otherwise, this is the last edge we travel, move forward for the rest of the lookahead
                 path = np.array(remaining_path_edges[0][1]) - remaining_path_edges[0][0]
                 point = [float(point[0]), float(point[1])]
                 point += (lookahead_left*(path))/np.linalg.norm(path)
