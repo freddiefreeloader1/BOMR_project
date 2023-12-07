@@ -189,7 +189,7 @@ def draw_grid_on_map(map_img, grid, cell_size):
             if grid[row, col] == 1: 
                 x_start, x_end = col * cell_size, (col + 1) * cell_size
                 y_start, y_end = row * cell_size, (row + 1) * cell_size
-                cv2.rectangle(grid_map, (x_start, y_start), (x_end, y_end), color_grid, -1)
+                cv2.rectangle(grid_map, (x_start, y_start), (x_end, y_end), color_grid, 1)
 
     return grid_map
 
@@ -213,7 +213,7 @@ def draw_grid_path(map_img, grid, path, cell_size):
             if (col,row) in path: 
                 x_start, x_end = col * cell_size, (col + 1) * cell_size
                 y_start, y_end = row * cell_size, (row + 1) * cell_size
-                cv2.rectangle(grid_path, (x_start, y_start), (x_end, y_end), color_grid, -1)
+                cv2.rectangle(grid_path, (x_start, y_start), (x_end, y_end), color_grid, 1)
 
     return grid_path
 
