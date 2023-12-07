@@ -39,6 +39,11 @@ path_grid = np.array([])
 start = None # Path for local navigation
 end = None # Path for local navigation
 
+def get_camera_state():
+    return camera_state
+
+def set_camera_state(state):
+    camera_state = state
 # Thymio variables
 
 def camera_handle_keys():

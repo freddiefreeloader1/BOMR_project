@@ -33,6 +33,7 @@ PROX_DANGER_MAX = 1500    # A sensor above this reading
 
 STATE_COOLDOWN = 3
 
+ROBOT_KIDNAP_TIME = 15
 #sensor constants
 MOTOR_SENSOR_TO_SPINS = 2*math.pi/(4.6*400)
 MOTOR_SENSOR_TO_MPS = 0.0003175
