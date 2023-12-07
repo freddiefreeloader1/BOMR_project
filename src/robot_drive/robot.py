@@ -71,19 +71,22 @@ def steer_danger(node,robot):
     obst_rescind = ROBOT_AVOID_SENSOR_RESCIND
     obst_stop = ROBOT_AVOID_SENSOR_STOP
 
+    touching_wall = any([p > PROX_TOUCHING_THRESHOLD for p in prox])
+
     lprox, mprox, rprox = get_proximity_sides(prox)
     lprox, mprox, rprox = lprox//100, mprox//100, rprox//100
     
-    back = mprox * obst_stop
+    back = mprox * obst_stop + touching_wall * (ROBOT_AVOID_TOUCHING_WALL)
 
     lspeed = int(speed + obst_gain * lprox - back - obst_rescind * rprox)
     rspeed = int(speed + obst_gain * rprox - back - obst_rescind * lprox)
+
     node.send_set_variables(motors(lspeed,rspeed))
 
 def get_proximity_sides(prox):
-    left = prox[0]*PROXIMITIY_SMOOTHING + prox[1]*(1-PROXIMITIY_SMOOTHING)
+    left = max(prox[0], prox[1])
+    right = max(prox[4],prox[3])
     mid = prox[2]*PROXIMITIY_SMOOTHING + prox[1]*(1-PROXIMITIY_SMOOTHING)/2 + prox[3]*(1-PROXIMITIY_SMOOTHING)/2
-    right = prox[4]*PROXIMITIY_SMOOTHING + prox[3]*(1-PROXIMITIY_SMOOTHING)
     return left, mid, right
 
 # Async sensor reading update
@@ -100,10 +103,10 @@ def on_variables_changed(node, variables):
         
        # print(prox[0],prox[4],state,state_timer)
         # handle states
-        if(lprox > obstH or rprox > obstH):
+        if(lprox > obstH or rprox > obstH or mprox > obstH):
             shared.robot.state = RobotState.AVOIDING_WALLS
         
-        elif(lprox < obstL and rprox < obstL):
+        elif(lprox < obstL and rprox < obstL and mprox < obstL):
             if(shared.robot.state == RobotState.AVOIDING_WALLS):
                 shared.robot.state_timer = STATE_COOLDOWN
                 shared.robot.state = RobotState.AVOIDING_WALLS_COOLDOWN
