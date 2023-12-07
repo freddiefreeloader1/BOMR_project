@@ -3,7 +3,7 @@ from planning.Astar_coord import *
 from planning.Astar import * 
 from enum import Enum
 from util.common import Quit
-from util.constants import CAMERA_ID
+from util.constants import *
 
 # The camera has 5 states:
 # CAPTURING DATA: starts when the user presses 'p'.
@@ -26,18 +26,15 @@ cap = None
 camera_state = CameraState.WAITING
 
 # Map and obstacle detection variables
-max_width, max_height = 1170, 735
 #max_width,max_height = 600,840
 coord_to_transform = []
 pts2 = []
 
 # Grid settıng
-cell_size = 20
 start_grid = () 
 end_grid = ()
 grid = np.array([])
 path_grid = np.array([])
-metric_padding = 70
 
 start = None # Path for local navigation
 end = None # Path for local navigation
@@ -60,7 +57,7 @@ def camera_handle_keys():
         print('Detecting Thymio...')
 
 def CameraLoop(shared):
-    global camera_state, max_height, max_width, coord_to_transform, cell_size, start_grid, end_grid, grid, path_grid, start, end, pts2
+    global camera_state, CAMERA_BOARD_HEIGHT, CAMERA_BOARD_WIDTH, coord_to_transform, PLANNING_CELL_SIZE, start_grid, end_grid, grid, path_grid, start, end, pts2
     global grid,map_img, obstacle_masks
     ret, frame = cap.read()
     if not ret:
@@ -74,10 +71,10 @@ def CameraLoop(shared):
     try:
         # Handle the 5 states of the camera.
         if camera_state == CameraState.CAPTURING_DATA:
-            capture_map, coord_to_transform, map_img, pts2 = capture_map_data(frame, binary_img, max_width, max_height)
+            capture_map, coord_to_transform, map_img, pts2 = capture_map_data(frame, binary_img, CAMERA_BOARD_WIDTH, CAMERA_BOARD_HEIGHT)
             
             if capture_map:
-                map_img = cv2.resize(map_img, (max_width, max_height))
+                map_img = cv2.resize(map_img, (CAMERA_BOARD_WIDTH, CAMERA_BOARD_HEIGHT))
                 obstacle_masks = capture_obstacle_data(map_img)
                 print("Map and obstacles captured!")
 
@@ -85,13 +82,13 @@ def CameraLoop(shared):
 
         elif camera_state.value >= CameraState.SETTING_UP.value: #setting up, detecting thymio, and planning path
             M = cv2.getPerspectiveTransform(coord_to_transform, pts2)
-            map_img = cv2.warpPerspective(frame, M, (max_width, max_height))
+            map_img = cv2.warpPerspective(frame, M, (CAMERA_BOARD_WIDTH, CAMERA_BOARD_HEIGHT))
             
             end = get_goal_position(map_img)
             # print("End", end)
 
             if camera_state.value >= CameraState.DETECTING_THYMIO.value:
-                map_img = cv2.resize(map_img, (max_width, max_height)) 
+                map_img = cv2.resize(map_img, (CAMERA_BOARD_WIDTH, CAMERA_BOARD_HEIGHT)) 
                 shared.thymio_position, shared.thymio_angle = get_thymio_info(map_img)
                 # print(f'Position: {thymio_position}, Angle: {thymio_angle}')
                 if shared.thymio_position is not None:
@@ -105,9 +102,9 @@ def CameraLoop(shared):
                 start = shared.thymio_position
 
                 ''' Path planning '''
-                map_img = cv2.resize(map_img, (max_width, max_height))
-                grid, path_grid, simplified_path, shared.metric_path , map_copy = make_path(map_img, obstacle_masks, cell_size, start, end, grid, 
-                metric_padding ,max_width, max_height)
+                map_img = cv2.resize(map_img, (CAMERA_BOARD_WIDTH, CAMERA_BOARD_HEIGHT))
+                grid, path_grid, simplified_path, shared.metric_path , map_copy = make_path(map_img, obstacle_masks, PLANNING_CELL_SIZE, start, end, grid, 
+                PLANNING_PADDING ,CAMERA_BOARD_WIDTH, CAMERA_BOARD_HEIGHT)
 
                 print(shared.metric_path)
                 camera_state = CameraState.DONE
@@ -130,11 +127,11 @@ def CameraLoop(shared):
             
             shared.end = end
 
-            map_img = draw_grid_on_map(map_img, grid, cell_size)
+            map_img = draw_grid_on_map(map_img, grid, PLANNING_CELL_SIZE)
             if path_grid is not None:
-                map_img = draw_grid_path(map_img, grid, path_grid, cell_size)
+                map_img = draw_grid_path(map_img, grid, path_grid, PLANNING_CELL_SIZE)
                 cv2.imshow('A* Exploration', map_copy)
-            map_img = cv2.resize(map_img, (max_width-100,max_height-100))
+            map_img = cv2.resize(map_img, (CAMERA_BOARD_WIDTH-100,CAMERA_BOARD_HEIGHT-100))
 
             cv2.imshow('Map', map_img)
             

@@ -2,6 +2,13 @@ import math
 
 ### SETUP ###
 CAMERA_ID = 1
+#size of grid cells in milimeters
+PLANNING_CELL_SIZE = 20
+#amount of padding around obstacles in milimeters
+PLANNING_PADDING = 70
+
+#width and height of the floor we detect, in milimeters
+CAMERA_BOARD_WIDTH, CAMERA_BOARD_HEIGHT = 1170, 735
 
 
 ### ROBOT CONSTANTS ###
