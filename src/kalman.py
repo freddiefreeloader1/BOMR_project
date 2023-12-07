@@ -3,7 +3,17 @@ from filterpy.kalman import KalmanFilter
 
 #Change from body frame to local frame
 def change_frame(body_data,body_orientation):
+    '''
+    Change from body frame to local frame.
 
+    Parameters:
+    - body_data: Data expressed in the body frame.
+    - body_orientation: Orientation of the robot in the local frame (from kf_rot).
+
+    Returns:
+    Data expressed in the local frame.
+    
+    '''
     R = np.array([[np.cos(body_orientation), -np.sin(body_orientation)],
                   [np.sin(body_orientation), np.cos(body_orientation)]])
     accel_local = R.dot(body_data)
