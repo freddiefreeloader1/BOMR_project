@@ -38,7 +38,7 @@ MOTOR_SENSOR_TO_SPINS = 2*math.pi/(4.6*400)
 MOTOR_SENSOR_TO_MPS = 0.0003175
 ACCELERATION_SENSOR_TO_MPSS = 9.81/21.0
 
-PROXIMITIY_SMOOTHING = 0.7     #use PROX_SMOOTHING of a sensor, and (1-P_SM) of the neighboring prox. sensors ( 1 - use only [0],[2],[4])
+PROXIMITIY_SMOOTHING = 0.8     #use PROX_SMOOTHING of a sensor, and (1-P_SM) of the neighboring prox. sensors ( 1 - use only [0],[2],[4])
 ### KALMAN ###
 #noise components 
 ACCEL_NOISE = 9.81/23
