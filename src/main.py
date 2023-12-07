@@ -31,6 +31,7 @@ def main():
         while True:
             # Run the camera loop
             CameraLoop(shared)
+
             if shared.robot is not None:
                 print(shared.thymio_position, shared.robot.state)
                 if(shared.thymio_position is not None and shared.robot.state == RobotState.KIDNAPPED_RETURNED):
