@@ -1,3 +1,4 @@
+# imports
 import heapq
 import timeit
 import cv2
@@ -6,67 +7,29 @@ from computer_vision import *
 import numpy as np
 import random
 
-
+# possible moves from one square to another
 moves_8n = [(0, -1), (0, 1), (-1, 0), (1, 0), (-1, -1), (-1, 1), (1, -1), (1, 1)]
 
 moves_4n = [(0, -1), (0, 1), (-1, 0), (1, 0)]
 
 
 
-def plot_path(maze, path, start, end):
-
-    maze_with_path = [row.copy() for row in maze]
-
-
-    for position in path:
-
-        maze_with_path[position[1]][position[0]] = 2  # Marking the path
-
-
-    maze_with_path[start[1]][start[0]] = 3  
-
-    maze_with_path[end[1]][end[0]] = 4  
-
-
-    maze_array = np.array(maze_with_path, dtype=np.int32)
-
-
-    cmap = plt.cm.colors.ListedColormap(['white', 'red', 'green', 'blue', 'purple'])
-
-    bounds = [0, 1, 2, 3, 4, 5]
-
-    norm = plt.cm.colors.BoundaryNorm(bounds, cmap.N)
-
-    plt.imshow(maze_array, cmap=cmap, norm=norm, origin='upper', interpolation='none')
-
-
-    plt.xticks(ticks=np.arange(0, len(maze[0]), 1)-0.5, labels=[])
-
-    plt.yticks(ticks=np.arange(0, len(maze), 1)-0.5,labels=[])
-
-
-    plt.xlabel('X-axis')
-
-    plt.ylabel('Y-axis')
-
-
-    plt.scatter(0, 0, marker='o', color='black', label='(0,0)')
-
-
-    plt.scatter(path[0][0], path[0][1], marker='o', color='cyan', label='Start')
-
-    plt.scatter(path[-1][0], path[-1][1], marker='o', color='magenta', label='End')
-
-
-    plt.grid(True, color='black', linewidth=0.5)
-
-
-    plt.show()
-
-
-
 class Node:
+    """
+    Represents a node in the A* algorithm.
 
+    Attributes:
+    - parent (Node): The parent node in the search tree.
+    - position (Tuple[int, int]): The position (coordinates) of the node on the grid.
+    - cost_of_move (float): The cost of reaching this node from the start.
+    - heuristic (float): The estimated cost to reach the goal from this node.
+    - total_cost (float): The sum of the cost_of_move and heuristic.
+
+    Methods:
+    - __eq__(self, other): Compares two nodes based on their positions.
+    - __lt__(self, other): Compares two nodes based on their total_cost 
+    
+    """
     def __init__(self, parent=None, position=None):
 
         self.parent = parent
@@ -94,10 +57,36 @@ class Node:
 
 
 def astar_grid(maze, start, end, moves):
-    
-    '''if maze[start[0]][start[1]] == 1:
-        print("Can't start from here!")
-        return None '''
+    """
+    A* search algorithm for finding the shortest path on a 2D grid.
+
+    Parameters:
+    - maze (numpy.ndarray): A 2D grid where 0 represents an open path, and 1 represents an obstacle.
+    - start (Tuple[int, int]): The starting point on the grid.
+    - end (Tuple[int, int]): The destination point on the grid.
+    - moves (List[Tuple[int, int]]): A list of tuples representing possible moves from a given position.
+
+    Returns:
+    - np.array[Tuple[int, int]] or None: The shortest path from the start to the end on the grid, or None if no path is found.
+
+    Node Class:
+    - The algorithm uses a Node class to represent a point in the search space, which includes information about the node's position,
+      cost of movement from the start, heuristic (estimated cost to reach the goal), and the total cost.
+
+    Assumptions:
+    - The maze is represented as a NumPy array where 0 denotes an open path, and 1 denotes an obstacle.
+
+    Example:
+    >>> maze = np.array([[0, 0, 0, 1, 0],
+    ...                  [0, 1, 0, 1, 0],
+    ...                  [0, 1, 0, 0, 0],
+    ...                  [0, 0, 0, 1, 0],
+    ...                  [0, 0, 0, 0, 0]])
+    >>> start = (0, 0)
+    >>> end = (4, 4)
+    >>> moves_8n = [(1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (-1, -1), (-1, 1), (1, -1)]
+    >>> path = astar_grid(maze, start, end, moves_8n)
+    """
 
     start_node = Node(None, start)
 
@@ -166,62 +155,23 @@ def astar_grid(maze, start, end, moves):
             heapq.heappush(open_list, child)
 
 
-def find_start_end(grid):
-
-    for i in range(len(grid)):
-
-        for j in range(len(grid[0])):
-
-            if grid[i][j] == "S":
-
-                Start = (j,i)
-
-            if grid[i][j] == "E":
-
-                End = (j,i)
-
-    return Start, End
-
-
-def generate_random_maze(rows, cols, start, end, obstacle_prob):
-
-    maze = [["0" for _ in range(cols)] for _ in range(rows)]
-
-
-    maze[start[1]][start[0]] = "S"
-
-    maze[end[1]][end[0]] = "E"
-
-
-    for row in range(rows):
-
-        for col in range(cols):
-
-            if maze[row][col] == "S" or maze[row][col] == "E":
-
-                continue
-
-
-            if random.uniform(0, 1) < obstacle_prob:
-
-                maze[row][col] = 1
-
-            else:
-
-                maze[row][col] = 0
-
-
-    return maze
-
-
-def print_maze(maze):
-
-    for row in maze:
-
-        print(" ".join(map(str, row)))
-
 
 def simplify_path(path):
+
+    """
+    Simplifies a path by removing unnecessary intermediate points.
+
+    Parameters:
+    - path (np.array[Tuple[int, int]]): The original path represented as a list of coordinates.
+
+    Returns:
+    - np.array[Tuple[int, int]]: The simplified path with unnecessary intermediate points removed.
+    
+    Example:
+    >>> simplify_path([(0, 0), (1, 0), (2, 0), (3, 0), (3, 1), (3, 2)])
+    [(0, 0), (3, 0), (3, 2)]
+
+    """
     simplified_path = [path[0]] 
 
     for i in range(1, len(path) - 1):
@@ -239,7 +189,34 @@ def simplify_path(path):
     return simplified_path
 
 def make_path(map_img, obstacle_masks, cell_size, start, end, grid, map_x = 600, map_y = 400):
-    
+    """
+    Generates a path on a grid-based map using A* algorithm, considering obstacles on the image.
+
+    Parameters:
+    - map_img (numpy.ndarray): The original map image.
+    - obstacle_masks (List[numpy.ndarray]): List of obstacle masks on the map.
+    - cell_size (int): Size of each grid cell.
+    - start (Tuple[int, int]): Starting point in image coordinates (x, y).
+    - end (Tuple[int, int]): Ending point in image coordinates (x, y).
+    - grid (numpy.ndarray): The grid representing the map.
+    - map_x (int): Width of the map in image coordinates.
+    - map_y (int): Height of the map in image coordinates.
+
+    Returns:
+    - Tuple[numpy.ndarray, List[Tuple[int, int]], List[Tuple[int, int]], List[Tuple[float, float]]]:
+        - grid (numpy.ndarray): The grid with obstacle information.
+        - path_grid (List[Tuple[int, int]]): The path on the grid coordinates.
+        - simplified_path (List[Tuple[int, int]]): The simplified path on the grid coordinates.
+        - metric_path (List[Tuple[float, float]]): The path in metric (image) coordinates.
+
+    Example:
+    >>> map_img = cv2.imread('map_image.png')
+    >>> obstacle_masks = [obstacle_mask_1, obstacle_mask_2]
+    >>> cell_size = 10
+    >>> start = (100, 50)
+    >>> end = (300, 200)
+    >>> grid, path_grid, simplified_path, metric_path = make_path(map_img, obstacle_masks, cell_size, start, end, grid)
+    """
     bw_map = cv2.cvtColor(map_img.copy(), cv2.COLOR_BGR2GRAY)
     grid = create_grid(bw_map, obstacle_masks, cell_size)
     start_grid = (grid.shape[1] * start[0] // map_img.shape[1], grid.shape[0] * start[1] // map_img.shape[0])
@@ -255,6 +232,25 @@ def make_path(map_img, obstacle_masks, cell_size, start, end, grid, map_x = 600,
 
 
 def transform_grid_to_metric(path, map_width, map_height, grid):
+    """
+    Transforms a path from grid coordinates to metric (image) coordinates.
+
+    Parameters:
+    - path (List[Tuple[int, int]]): The path in grid coordinates.
+    - map_width (int): Width of the map in metric (image) coordinates.
+    - map_height (int): Height of the map in metric (image) coordinates.
+    - grid (numpy.ndarray): The grid representing the map.
+
+    Returns:
+    - List[Tuple[float, float]]: The path in metric (image) coordinates.
+
+    Example:
+    >>> path = [(0, 0), (3, 0), (3, 2)]
+    >>> map_width = 600
+    >>> map_height = 400
+    >>> grid = np.zeros((4, 4), dtype=int)
+    >>> metric_path = transform_grid_to_metric(path, map_width, map_height, grid)
+    """
     metric_path = []
     grid_x = grid.shape[1]
     grid_y = grid.shape[0]
@@ -262,49 +258,6 @@ def transform_grid_to_metric(path, map_width, map_height, grid):
         metric_path.append(((x * map_width) / grid_x, (y * map_height) / grid_y))
 
     return metric_path
-
-
-def search():
-
-
-    rows = 50
-
-    cols = 50
-
-    start_point = (random.randint(0, cols - 1), random.randint(0, rows - 1))
-
-    end_point = (random.randint(0, cols - 1), random.randint(0, rows - 1))
-
-    obstacle_probability = 0.2
-
-
-    random_maze = generate_random_maze(rows, cols, start_point, end_point, obstacle_probability)
-
-
-    start, end = find_start_end(random_maze)
-
-    print(start, end)
-
-    # plot_path(random_maze,[start,end],start,end)
-    
-
-    astar_time = timeit.timeit(lambda: astar_grid(random_maze, start, end, moves_8n), number=1)
-
-
-    print(f"Total running time: {astar_time * 10**3:.3f} ms")
-
-    path = astar_grid(random_maze, start, end, moves_8n)
-
-
-    if path:
-
-        # print("Path found:", path)
-
-        plot_path(random_maze, path, start, end)
-
-    else:
-
-        print("No path found.")
 
 
 if __name__ == "__main__":
