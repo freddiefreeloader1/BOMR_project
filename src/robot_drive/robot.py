@@ -1,5 +1,5 @@
 
-from robot_drive.path_following import get_angle_to, Odometry,PathFollow,PID
+from robot_drive.path_following import get_angle_to, Odometry,PathFollow
 from kalman.kalman import Kalman
 import time
 from enum import Enum
@@ -19,7 +19,6 @@ class RobotState(Enum):
 class Robot:
     odometry = Odometry()
     path_follower = None
-    angle_PID = PID(1,0,0)
     kalman = None
     state = RobotState.FOLLOWING_PATH
     state_timer = 0
