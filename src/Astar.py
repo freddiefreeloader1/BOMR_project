@@ -97,7 +97,7 @@ def astar_grid(maze, start, end, moves, map_copy):
 
     open_list = []
     closed_set = set()
-    visited_positions = set()
+    visited_positions = set()  # Maintain a set of visited positions
 
     heapq.heappush(open_list, start_node)
     visited_positions.add(start)
