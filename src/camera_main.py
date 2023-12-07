@@ -3,6 +3,7 @@ from planning.Astar_coord import *
 from planning.Astar import * 
 from enum import Enum
 from util.common import Quit
+from util.constants import CAMERA_ID
 
 # The camera has 5 states:
 # CAPTURING DATA: starts when the user presses 'p'.
@@ -20,7 +21,6 @@ class CameraState(Enum):
     DONE = 5
 
 # Depends on your hardware! (built in laptop cameras are usually 0)
-CAMERA_NUMBER = 0
 
 cap = None
 camera_state = CameraState.WAITING
@@ -158,7 +158,7 @@ def CameraClose():
 
 def CameraInit():
     global cap
-    cap = cv2.VideoCapture(CAMERA_NUMBER)
+    cap = cv2.VideoCapture(CAMERA_ID)
 
 if __name__ == "__main__":
     CameraInit()

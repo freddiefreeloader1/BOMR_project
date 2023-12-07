@@ -1,5 +1,9 @@
 import math
 
+### SETUP ###
+CAMERA_ID = 1
+
+
 ### ROBOT CONSTANTS ###
 #pathing
 PATH_LOOKAHEAD = 0.08
