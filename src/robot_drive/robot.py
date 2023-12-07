@@ -70,8 +70,17 @@ def steer_danger(node,robot):
     obst_rescind = ROBOT_AVOID_SENSOR_RESCIND
     obst_stop = ROBOT_AVOID_SENSOR_STOP
 
-    back = (prox[2]//100) * obst_stop
-    node.send_set_variables(motors(speed + obst_gain * (prox[0] // 100) - back - obst_rescind * (prox[4]//100),speed + obst_gain * (prox[4] // 100) - back - obst_rescind * (prox[0]//100)))
+    lprox, mprox, rprox = get_proximity_sides(prox)
+    lprox, mprox, rprox = lprox//100, mprox//100, rprox//100
+    
+    back = mprox * obst_stop
+    node.send_set_variables(motors(speed + obst_gain * lprox - back - obst_rescind * rprox,speed + obst_gain * rprox - back - obst_rescind * lprox))
+
+def get_proximity_sides(prox):
+    left = prox[0]*PROXIMITIY_SMOOTHING + prox[1]*(1-PROXIMITIY_SMOOTHING)
+    mid = prox[2]*PROXIMITIY_SMOOTHING + prox[1]*(1-PROXIMITIY_SMOOTHING)/2 + prox[3]*(1-PROXIMITIY_SMOOTHING)/2
+    right = prox[4]*PROXIMITIY_SMOOTHING + prox[3]*(1-PROXIMITIY_SMOOTHING)
+    return left, mid, right
 
 # Async sensor reading update
 def on_variables_changed(node, variables):
@@ -79,18 +88,20 @@ def on_variables_changed(node, variables):
     try:
         #Proximity has been updated
         prox = variables["prox.horizontal"]
+
+        lprox, mprox, rprox = get_proximity_sides(prox)
         # PROXIMITY CONSTANTS
-        obstL = 10
-        obstH = 20
-        STATE_COOLDOWN = 4
+        obstL = PROX_DANGER_MIN
+        obstH = PROX_DANGER_MAX
+        
        # print(prox[0],prox[4],state,state_timer)
         # handle states
-        if(prox[0] > obstH or prox[4] > obstH):
+        if(lprox > obstH or rprox > obstH):
             if(shared.robot.state == RobotState.AVOIDING_WALLS):
                 shared.robot.state_timer = STATE_COOLDOWN
             shared.robot.state = RobotState.AVOIDING_WALLS
         
-        elif(prox[0] < obstL and prox[4] < obstL):
+        elif(lprox < obstL and rprox < obstL):
             if(shared.robot.state == RobotState.FOLLOWING_PATH):
                 shared.robot.state_timer = STATE_COOLDOWN
             if(shared.robot.state_timer <= 0):
