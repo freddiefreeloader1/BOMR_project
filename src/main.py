@@ -37,6 +37,7 @@ def main():
                     shared.metric_path = []
                     set_camera_state(CameraState.DETECTING_THYMIO)
                     shared.robot = None
+                    print("entered if statement", get_camera_state())
 
             # If the camera has data for the robot, update it.
             if((shared.robot is None and len(shared.metric_path) > 0)):

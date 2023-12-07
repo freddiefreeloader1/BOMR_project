@@ -43,6 +43,7 @@ def get_camera_state():
     return camera_state
 
 def set_camera_state(state):
+    global camera_state
     camera_state = state
 # Thymio variables
 
