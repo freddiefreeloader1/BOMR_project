@@ -21,6 +21,10 @@ class Kalman:
     kf_pos = KalmanFilter(dim_x=6, dim_z=2)
     kf_rot = KalmanFilter(dim_x=2,dim_z=1)
 
+    accel_measurement = []
+    vel_measurement = []
+    spin_measurement = []
+
     ACCEL_NOISE = 9.81/23
     VEL_NOISE = 0.1
     ROT_NOISE = 0.005
@@ -40,8 +44,26 @@ class Kalman:
         data = data %(2*np.pi)
         return data
     
+    def get_velocity(self):
+        return self.kf_pos.x[2:4]
+    
+    def get_acceleration(self):
+        return self.kf_pos.x[4:6]
+    
     def get_position(self):
         return self.kf_pos.x[0:2]
+    def get_spin(self):
+        return self.kf_rot.x[1]
+    
+    def get_accel_meas(self):
+        return self.accel_measurement
+    
+    def get_vel_meas(self):
+        return self.vel_measurement
+    
+    def get_spin_meas(self):
+        return self.spin_measurement
+        
      
     
     def _compute_kf_pos(self,data, dt):
@@ -86,7 +108,7 @@ class Kalman:
         rotation = self.kf_rot.x.T[0]
         # Transform data to local
         data = change_frame(data, rotation)
-
+        self.accel_measurement.append(data)
         # Update kf parameters for multiplication
         self.kf_pos.H = np.array([[0,0,0,0,1,0],
                                   [0,0,0,0,0,1]])
@@ -102,18 +124,20 @@ class Kalman:
         rotation = self.kf_rot.x.T[0]
         # Transform data to local
         data = change_frame(data, rotation)
-
+        self.vel_measurement.append(data)
         # Update kf parameters for multiplication
         self.kf_pos.H = np.array([[0,0,1,0,0,0],
                                   [0,0,0,1,0,0]])
         self.kf_pos.R = (self.VEL_NOISE**2)*np.eye(2)
 
         self._compute_kf_pos(data,dt)
+
     # Update the change in heading from the last update
     # (defacto, this is calculated using the wheel speeds)
     def update_spin(self,data, time):
         dt = time- self.time_rot
         self.time_rot = time
+        self.spin_measurement.append(data)
         self.kf_rot.H = np.array([[0,1]])
         self.kf_rot.R[0,0] = self.SPIN_NOISE**2
         self._compute_kf_rot(data,dt)

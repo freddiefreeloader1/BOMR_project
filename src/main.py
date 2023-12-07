@@ -17,9 +17,13 @@ def main():
     global shared
     RobotInit()
     CameraInit()
+
     kalman_history = []
     absolute_history = []
     kalman_history_orientation = []
+    kalman_history_acce = []
+    kalman_history_vel = []
+    kalman_history_spin = []
     absolute_orientation = []
     # replace loop with return
     try:
@@ -29,9 +33,9 @@ def main():
             # If the camera has data for the robot, update it.
             if((shared.robot is None and len(shared.metric_path) > 0)):
                 a,b,c = convert_camera_to_robot(shared.thymio_position,shared.thymio_angle,shared.metric_path)
-                init_robot_position(shared,a,b,c) #CAMERA ANGLE IS CLOCKWISE!!!
+                init_robot_position(shared,a,b,c) 
 
-            
+            #If we have new position data update the kalman
             if(shared.thymio_position is not None and shared.robot is not None):
                 new_pos, new_angle, _ = convert_camera_to_robot(shared.thymio_position, shared.thymio_angle)
                 absolute_history.append(new_pos)
@@ -47,11 +51,21 @@ def main():
             # If the robot was given a path, start running.
             if(len(shared.metric_path) > 0 and not(shared.robot is None)):
                 RobotLoop(shared)
-                #print((shared.robot.odometry.x,shared.robot.odometry.y),shared.end,shared.robot.odometry.angle )
-
+            if shared.robot is not None:
+                kalman_history_vel.append(shared.robot.kalman.get_velocity())
+                kalman_history_acce.append(shared.robot.kalman.get_acceleration())
+                kalman_history_spin.append(shared.robot.kalman.get_spin())
     except Quit:
         pass
 
+    acc_meas = np.array(shared.robot.kalman.get_accel_meas())
+    vel_meas = np.array(shared.robot.kalman.get_vel_meas())
+    spin_meas = np.array(shared.robot.kalman.get_spin_meas())
+    meas_time = np.linspace(0,1,len(spin_meas))
+    kalman_history_vel = np.array(kalman_history_vel)
+    kalman_history_acce = np.array(kalman_history_acce)
+    kalman_history_spin = np.array(kalman_history_spin)
+    history_time = np.linspace(0,1,len(kalman_history_acce))
     # Plotting
     absolute_history = np.array(absolute_history)
     kalman_history = np.array(kalman_history)
@@ -59,6 +73,45 @@ def main():
     absolute_orientation = np.array(absolute_orientation)
     kalman_history_orientation = np.array(kalman_history_orientation)
     path_display = np.array(shared.path_shared)
+
+    plt.figure(figsize=(15, 10))
+    plt.subplot(2,2,1)
+    plt.plot(meas_time,vel_meas[:,0],label = 'Measured X velocity')
+    plt.plot(history_time,kalman_history_vel[:,0],label = 'Kalman X velocity')
+    plt.title('Velocity comparison')
+    plt.xlabel('Arbitrary time')
+    plt.ylabel('Velocity (m/s)')
+    plt.legend()
+
+    plt.subplot(2,2,2)
+    meas_time_acc = np.linspace(0,1,len(acc_meas))
+    plt.plot(meas_time_acc,acc_meas[:,0],label = 'Measured X acceleration')
+    plt.plot(history_time,kalman_history_acce[:,0],label = 'Kalman X acceleration')
+    plt.title('Acceleration comparison')
+    plt.xlabel('Arbitrary time')
+    plt.ylabel('Acceleration (m/s^2)')
+    plt.legend()
+
+    plt.subplot(2,2,3)
+    plt.plot(meas_time_acc,acc_meas[:,1],label = 'Measured Y acceleration')
+    plt.plot(history_time,kalman_history_acce[:,1],label = 'Kalman Y acceleration')
+    plt.title('Acceleration comparison')
+    plt.xlabel('Arbitrary time')
+    plt.ylabel('Acceleration (m/s^2)')
+    plt.legend()
+
+    plt.subplot(2,2,4)
+    plt.plot(meas_time,vel_meas[:,1],label = 'Measured Y velocity')
+    plt.plot(history_time,kalman_history_vel[:,1],label = 'Kalman Y velocity')
+    plt.title('Velocity comparison')
+    plt.xlabel('Arbitrary time')
+    plt.ylabel('Velocity (m/s)')
+    plt.legend()
+
+    plt.tight_layout()
+    plt.show()
+
+
 
     plt.figure(figsize=(15, 10))
 
