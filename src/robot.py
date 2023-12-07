@@ -79,7 +79,6 @@ def steer_danger(node,robot):
 def on_variables_changed(node, variables):
     shared = get_shared()
     try:
-        global state, state_timer
         #Proximity has been updated
         prox = variables["prox.horizontal"]
         # PROXIMITY CONSTANTS
@@ -90,13 +89,13 @@ def on_variables_changed(node, variables):
         # handle states
         if(prox[0] > obstH or prox[4] > obstH):
             if(shared.robot.state == RobotState.AVOIDING_WALLS):
-                state_timer = STATE_COOLDOWN
+                shared.robot.state_timer = STATE_COOLDOWN
             shared.robot.state = RobotState.AVOIDING_WALLS
         
         elif(prox[0] < obstL and prox[4] < obstL):
             if(shared.robot.state == RobotState.FOLLOWING_PATH):
-                state_timer = STATE_COOLDOWN
-            if(STATE_COOLDOWN <= 0):
+                shared.robot.state_timer = STATE_COOLDOWN
+            if(shared.robot.state_timer <= 0):
                 shared.robot.state = RobotState.FOLLOWING_PATH
 
         
