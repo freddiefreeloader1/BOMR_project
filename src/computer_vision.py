@@ -87,7 +87,8 @@ def capture_obstacle_data(map_img):
         obstacle_masks: a list of masks representing the obstacles
     """
     map_img_copy = map_img.copy()
-    map_img_copy = cv2.GaussianBlur(map_img_copy, (15, 15), 0)
+    # map_img_copy = cv2.GaussianBlur(map_img_copy, (15, 15), 0)
+    map_img_copy = cv2.medianBlur(map_img_copy, 9)
     hsv_map_img = cv2.cvtColor(map_img_copy, cv2.COLOR_BGR2HSV)
 
     lower_green = np.array([41, 60, 0])
