@@ -44,10 +44,10 @@ def motors(left, right):
         "motor.right.target": [right],
     }
 def change_acceleration(acc):
-    return acc*9.81/21.0
+    return acc*ACCELERATION_SENSOR_TO_MPSS
 
 def change_velocity(vel):
-    vel = 0.0003175*vel
+    vel = MOTOR_SENSOR_TO_MPS*vel
     return vel
 
 ### ---- ROBOT CODE ---- ###
@@ -113,15 +113,10 @@ def on_variables_changed(node, variables):
             right_speed = 0
             if(left_speed == 0):
                 raise KeyError  #if neither was updated, skip
-        #ODOMETRY CONSTANTS
-        ROBOT_DIAMETER = 0.25
-        ENCODER_TO_MPS = 0.01
-        MOTOR_READ_FREQ = 10
-        constant_spin = 2*math.pi/(4.6*400)
+
         #Update Odometry:
-        dtheta = (right_speed - left_speed)*constant_spin
-        #dtheta = 2*math.pi/(4.6*(right_speed - left_speed))
-        #2*pi/4.6 = (400)*x 
+        dtheta = (right_speed - left_speed)*MOTOR_SENSOR_TO_SPINS
+        
         shared.robot.kalman.update_spin(data=dtheta,time=get_time())
         
 
