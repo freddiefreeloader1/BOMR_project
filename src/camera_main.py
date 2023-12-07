@@ -20,7 +20,7 @@ class CameraState(Enum):
     DONE = 5
 
 # Depends on your hardware! (built in laptop cameras are usually 0)
-CAMERA_NUMBER = 1
+CAMERA_NUMBER = 0
 
 cap = None
 camera_state = CameraState.WAITING
@@ -37,7 +37,7 @@ start_grid = ()
 end_grid = ()
 grid = np.array([])
 path_grid = np.array([])
-metric_padding = 100
+metric_padding = 70
 
 start = None # Path for local navigation
 end = None # Path for local navigation
@@ -69,7 +69,7 @@ def CameraLoop(shared):
     
     # frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
     map_img = frame.copy()
-
+    map_copy = map_img.copy()
     binary_img = preprocess_image(frame)
     try:
         # Handle the 5 states of the camera.
@@ -106,7 +106,7 @@ def CameraLoop(shared):
 
                 ''' Path planning '''
                 map_img = cv2.resize(map_img, (max_width, max_height))
-                grid, path_grid, simplified_path, shared.metric_path = make_path(map_img, obstacle_masks, cell_size, start, end, grid, 
+                grid, path_grid, simplified_path, shared.metric_path , map_copy = make_path(map_img, obstacle_masks, cell_size, start, end, grid, 
                 metric_padding ,max_width, max_height)
 
                 print(shared.metric_path)
@@ -133,9 +133,12 @@ def CameraLoop(shared):
             map_img = draw_grid_on_map(map_img, grid, cell_size)
             if path_grid is not None:
                 map_img = draw_grid_path(map_img, grid, path_grid, cell_size)
+                cv2.imshow('A* Exploration', map_copy)
             map_img = cv2.resize(map_img, (max_width-100,max_height-100))
 
             cv2.imshow('Map', map_img)
+            
+            
 
         font = cv2.FONT_HERSHEY_SIMPLEX
         cv2.putText(frame, 'Thymio: ' + str(shared.thymio_position), (10, 30), font, 0.5, (0, 0, 0), 2)
