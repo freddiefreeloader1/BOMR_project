@@ -20,7 +20,7 @@ class CameraState(Enum):
     DONE = 5
 
 # Depends on your hardware! (built in laptop cameras are usually 0)
-CAMERA_NUMBER = 1
+CAMERA_NUMBER = 0
 
 cap = None
 camera_state = CameraState.WAITING

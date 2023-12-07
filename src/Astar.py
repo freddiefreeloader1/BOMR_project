@@ -56,7 +56,7 @@ class Node:
 
 
 
-def astar_grid(maze, start, end, moves):
+def astar_grid(maze, start, end, moves, map_img):
     """
     A* search algorithm for finding the shortest path on a 2D grid.
 
@@ -101,16 +101,18 @@ def astar_grid(maze, start, end, moves):
     closed_set = set()
 
     heapq.heappush(open_list, start_node)
-
+    map_copy = map_img.copy()
     while open_list:
 
-
+        
         current_node = heapq.heappop(open_list)
 
 
         closed_set.add(current_node.position)
 
-
+        cv2.circle(map_copy, (current_node.position[0], current_node.position[1]), 2, (125, 0, 255), -1)
+        cv2.imshow('Map', map_copy)
+        
         if current_node == end_node:
             path = []
             while current_node:
@@ -221,7 +223,7 @@ def make_path(map_img, obstacle_masks, cell_size, start, end, grid, map_x = 600,
     grid = create_grid(bw_map, obstacle_masks, cell_size)
     start_grid = (grid.shape[1] * start[0] // map_img.shape[1], grid.shape[0] * start[1] // map_img.shape[0])
     end_grid = (grid.shape[1] * end[0] // map_img.shape[1], grid.shape[0] * end[1] // map_img.shape[0])
-    path_grid = astar_grid(grid, start_grid, end_grid, moves_8n)
+    path_grid = astar_grid(grid, start_grid, end_grid, moves_8n, map_img)
     if path_grid is None:
         print("no path found")
         return grid, None, None, None
