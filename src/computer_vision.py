@@ -98,7 +98,7 @@ def create_grid(map_img, obstacle_masks, cell_size):
         for col in range(grid_cols):
             y_start, y_end = row * cell_size, (row + 1) * cell_size
             x_start, x_end = col * cell_size, (col + 1) * cell_size
-            if row - grid_rows - 1 ==  0 or col - grid_cols - 1 == 0: 
+            if row - grid_rows + 1  ==  0 or col - grid_cols + 1  == 0 or row == 0 or col == 0: 
                 grid[row][col] = 1
             try:
                 obstacle_mask_new = final_obstacle_map[y_start:y_end, x_start:x_end]
