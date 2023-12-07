@@ -76,38 +76,42 @@ def capture_map_data(frame, binary_img, map_width, map_height):
         print("Error: ", e)
         return capture_map, None, None, None
 
-def capture_obstacle_data(map_img):
-    """Capture the obstacle data from the image by finding the contours of the obstacles and approximating them to a shape with 5 sides or less
 
-    Parameters:
+def capture_obstacle_data(map_img):
+    """Capture the obstacle data from the image by applying a Gaussian blur to it, converting it to HSV, applying a mask to it to get the green color, finding the contours and approximating them to polygons
+
+    Args:
         map_img: the image to capture the obstacle data from
 
     Returns:
         obstacle_masks: a list of masks representing the obstacles
     """
-    gray_map_img = preprocess_image(map_img)
-    obstacle_contours, hierarchy = cv2.findContours(gray_map_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    map_img_copy = map_img.copy()
+    map_img_copy = cv2.GaussianBlur(map_img_copy, (5, 5), 0)
+    hsv_map_img = cv2.cvtColor(map_img_copy, cv2.COLOR_BGR2HSV)
+
+    lower_green = np.array([41, 60, 0])
+    upper_green = np.array([80, 255, 255]) 
+
+    green_mask = cv2.inRange(hsv_map_img, lower_green, upper_green)
+    cv2.imshow('Obstacle detection', green_mask)
+
+    obstacle_contours, hierarchy = cv2.findContours(green_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
     if not obstacle_contours:
         return []
 
     obstacle_masks = []
 
-    for i, contour in enumerate(obstacle_contours):
-        if hierarchy[0][i][2] != -1:
-            continue
-
-        if cv2.contourArea(contour, True) < 0:
-            continue
-
+    for contour in obstacle_contours:
         epsilon_obstacle = 0.02 * cv2.arcLength(contour, True)
         approx_obstacle = cv2.approxPolyDP(contour, epsilon_obstacle, True)
 
         if approx_obstacle.shape[0] > 5:
-            continue
+            continue  # Skip contours with more than 5 sides
 
-        mask = np.zeros_like(gray_map_img)
-        cv2.drawContours(mask, [contour], -1, 255, -1)
+        mask = np.zeros_like(green_mask)
+        cv2.drawContours(mask, [approx_obstacle], -1, 255, -1)
         obstacle_masks.append(mask)
 
     return obstacle_masks
