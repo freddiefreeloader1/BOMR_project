@@ -80,7 +80,7 @@ class Kalman:
     #Update the F matrix, Q matrix and update the measurement for the position kalman
     def _compute_kf_pos(self,data, dt):
         #get accel_noise for process noise matrix
-        noise = self.ACCEL_NOISE # most dominant solution
+        noise = ACCEL_NOISE # most dominant solution
         
         #compute F according to dt
         self.kf_pos.F = np.array([[1,0,dt,0,0.5*dt**2,0],
@@ -107,7 +107,7 @@ class Kalman:
     def _compute_kf_rot(self,data,dt):
 
         #get accel_noise for process noise matrix
-        noise = self.SPIN_NOISE # most dominant solution
+        noise = SPIN_NOISE # most dominant solution
         
         #compute F according to dt
         self.kf_rot.F = np.array([[1,dt],
@@ -137,7 +137,7 @@ class Kalman:
         # Update kf parameters to accept accel measurement
         self.kf_pos.H = np.array([[0,0,0,0,1,0],
                                   [0,0,0,0,0,1]])
-        self.kf_pos.R = (self.ACCEL_NOISE**2)*np.eye(2)
+        self.kf_pos.R = (ACCEL_NOISE**2)*np.eye(2)
 
         #update kalman
         self._compute_kf_pos(data,dt)
@@ -156,7 +156,7 @@ class Kalman:
         # Update kf parameters to accept velocity measurement
         self.kf_pos.H = np.array([[0,0,1,0,0,0],
                                   [0,0,0,1,0,0]])
-        self.kf_pos.R = (self.VEL_NOISE**2)*np.eye(2)
+        self.kf_pos.R = (VEL_NOISE**2)*np.eye(2)
 
         #update kalman
         self._compute_kf_pos(data,dt)
@@ -173,7 +173,7 @@ class Kalman:
 
         # Update kf parameters to accept spin measurement
         self.kf_rot.H = np.array([[0,1]])
-        self.kf_rot.R[0,0] = self.SPIN_NOISE**2
+        self.kf_rot.R[0,0] = SPIN_NOISE**2
 
         # Update kf
         self._compute_kf_rot(data,dt)
@@ -191,7 +191,7 @@ class Kalman:
 
         # Update kf parameters to accept spin measurement
         self.kf_rot.H = np.array([[1,0]])
-        self.kf_rot.R[0,0] = self.ROT_NOISE**2
+        self.kf_rot.R[0,0] = ROT_NOISE**2
 
         # Updaye kf
         self._compute_kf_rot(data,dt)
@@ -206,7 +206,7 @@ class Kalman:
         # Update kf parameters to accept measurement position
         self.kf_pos.H = np.array([[1,0,0,0,0,0],
                                   [0,1,0,0,0,0]])
-        self.kf_pos.R = (self.POS_NOISE**2)*np.eye(2)
+        self.kf_pos.R = (POS_NOISE**2)*np.eye(2)
 
         # Update kf
         self._compute_kf_pos(data,dt)
