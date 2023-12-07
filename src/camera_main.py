@@ -32,7 +32,7 @@ coord_to_transform = []
 pts2 = []
 
 # Grid settıng
-cell_size = 30
+cell_size = 20
 start_grid = () 
 end_grid = ()
 grid = np.array([])
@@ -107,6 +107,7 @@ def CameraLoop(shared):
                 map_img = cv2.resize(map_img, (max_width, max_height))
                 grid, path_grid, simplified_path, shared.metric_path = make_path(map_img, obstacle_masks, cell_size, start, end, grid, 
                 max_width, max_height)
+
                 print(shared.metric_path)
                 camera_state = CameraState.DONE
                 
