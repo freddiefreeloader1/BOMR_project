@@ -20,8 +20,6 @@ class CameraState(Enum):
     PLANNING_PATH = 4
     DONE = 5
 
-# Depends on your hardware! (built in laptop cameras are usually 0)
-
 cap = None
 camera_state = CameraState.WAITING
 
@@ -70,7 +68,6 @@ def CameraLoop(shared):
         print("Unable to capture video")
         raise Quit
     
-    # frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
     map_img = frame.copy()
     map_copy = map_img.copy()
     binary_img = preprocess_image(frame)
@@ -91,12 +88,11 @@ def CameraLoop(shared):
             map_img = cv2.warpPerspective(frame, M, (CAMERA_BOARD_WIDTH, CAMERA_BOARD_HEIGHT))
             
             end = get_goal_position(map_img)
-            # print("End", end)
 
             if camera_state.value >= CameraState.DETECTING_THYMIO.value:
                 map_img = cv2.resize(map_img, (CAMERA_BOARD_WIDTH, CAMERA_BOARD_HEIGHT)) 
                 shared.thymio_position, shared.thymio_angle = get_thymio_info(map_img)
-                # print(f'Position: {thymio_position}, Angle: {thymio_angle}')
+
                 if shared.thymio_position is not None:
                     draw_thymio_position(map_img, shared.thymio_position)
 
@@ -117,17 +113,13 @@ def CameraLoop(shared):
                 
 
             # Local navigatıon code 
-
             draw_node(map_img, start, (0, 73, 255)) # <- Start node
             draw_node(map_img, end, (255, 255, 0)) # <- End node
 
             try:
                 robotpoint = (1000*shared.robot.odometry.x, -1000*shared.robot.odometry.y)
                 draw_node(map_img, robotpoint, (0, 0, 0))
-                
-                #draw_line(map_img,robotpoint,shared.thymio_angle,100,(0,0,0))
-                
-                #draw_line(map_img,robotpoint,-shared.heading-shared.robot.odometry.angle,100,(255,255,255))
+
             except Exception as e:
                 pass
             
@@ -140,8 +132,6 @@ def CameraLoop(shared):
             map_img = cv2.resize(map_img, (CAMERA_BOARD_WIDTH-100,CAMERA_BOARD_HEIGHT-100))
 
             cv2.imshow('Map', map_img)
-            
-            
 
         font = cv2.FONT_HERSHEY_SIMPLEX
         cv2.putText(frame, 'Thymio: ' + str(shared.thymio_position), (10, 30), font, 0.5, (0, 0, 0), 2)
