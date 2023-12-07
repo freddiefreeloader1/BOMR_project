@@ -4,6 +4,7 @@ from kalman.kalman import Kalman
 import time
 from enum import Enum
 from util.common import get_shared, set_shared
+from util.constants import *
 
 import math
 start_time = time.time()
@@ -55,11 +56,9 @@ def change_velocity(vel):
 def steer(node, robot ,point):
     angle = get_angle_to(robot.odometry,point)
     
-    #print("TARGET: {:.2f}, ROBOT: {:.2f}, {:.2f} angle - {:.2f}".format(shared.robot.path_follower.current_edge,shared.robot.odometry.x,shared.robot.odometry.y,math.degrees(shared.robot.odometry.angle)))
     # SPEED CONSTANTS
-    forward_speed = 250
-    steer_gain = 150
-    steer_max = 70
+    forward_speed = ROBOT_FOLLOW_FORWARD_SPEED
+    steer_gain = ROBOT_FOLLOW_STEER_AMOUNT
 
     steer = steer_gain * angle
     
@@ -67,10 +66,10 @@ def steer(node, robot ,point):
 def steer_danger(node,robot):
     prox = node.v.prox.horizontal
     # STEER CONSTANTS
-    speed = 200
-    obst_gain = 12
-    obst_rescind = 4
-    obst_stop = 15
+    speed = ROBOT_AVOID_FORWARD_SPEED
+    obst_gain = ROBOT_AVOID_SENSOR_GAIN
+    obst_rescind = ROBOT_AVOID_SENSOR_RESCIND
+    obst_stop = ROBOT_AVOID_SENSOR_STOP
 
     back = (prox[2]//100) * obst_stop
     node.send_set_variables(motors(speed + obst_gain * (prox[0] // 100) - back - obst_rescind * (prox[4]//100),speed + obst_gain * (prox[4] // 100) - back - obst_rescind * (prox[0]//100)))
