@@ -1,7 +1,7 @@
 import math
 
 ### SETUP ###
-CAMERA_ID = 1
+CAMERA_ID = 0
 #size of grid cells in milimeters
 PLANNING_CELL_SIZE = 20
 #amount of padding around obstacles in milimeters
