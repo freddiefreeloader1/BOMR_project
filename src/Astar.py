@@ -187,7 +187,7 @@ def simplify_path(path):
 
     return simplified_path
 
-def make_path(map_img, obstacle_masks, cell_size, start, end, grid, map_x = 600, map_y = 400):
+def make_path(map_img, obstacle_masks, cell_size, start, end, grid,  metric_padding, map_x = 600, map_y = 400):
     """
     Generates a path on a grid-based map using A* algorithm, considering obstacles on the image.
 
@@ -218,7 +218,7 @@ def make_path(map_img, obstacle_masks, cell_size, start, end, grid, map_x = 600,
     """
     map_copy = map_img.copy()
     bw_map = cv2.cvtColor(map_img.copy(), cv2.COLOR_BGR2GRAY)
-    grid = create_grid(bw_map, obstacle_masks, cell_size)
+    grid = create_grid(bw_map, obstacle_masks, cell_size, metric_padding)
     start_grid = (grid.shape[1] * start[0] // map_img.shape[1], grid.shape[0] * start[1] // map_img.shape[0])
     end_grid = (grid.shape[1] * end[0] // map_img.shape[1], grid.shape[0] * end[1] // map_img.shape[0])
     path_grid = astar_grid(grid, start_grid, end_grid, moves_8n, map_copy)
