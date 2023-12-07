@@ -1,10 +1,10 @@
-from computer_vision import *
+from vision.computer_vision import *
 from robot_main import init_robot_position, get_time
-from Astar_coord import *
-from Astar import * 
+from planning.Astar_coord import *
+from planning.Astar import * 
 from camera_main import CameraClose, CameraInit, CameraLoop
 from robot_main import RobotClose, RobotInit, RobotLoop
-from common import Quit, SharedData,shared,convert_camera_to_robot,plot_data
+from util.common import Quit, SharedData,shared,convert_camera_to_robot,plot_data
 
 import matplotlib.pyplot as plt
 import numpy as np

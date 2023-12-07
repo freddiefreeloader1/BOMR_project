@@ -1,9 +1,10 @@
 
-from path_following import get_angle_to, Odometry,PathFollow,PID
-from kalman import Kalman
+from robot_drive.path_following import get_angle_to, Odometry,PathFollow
+from kalman.kalman import Kalman
 import time
 from enum import Enum
-from common import get_shared, set_shared
+from util.common import get_shared, set_shared
+from util.constants import *
 
 import math
 start_time = time.time()
@@ -14,17 +15,17 @@ def get_time():
 class RobotState(Enum):
     FOLLOWING_PATH = 0,
     AVOIDING_WALLS = 1,
-    STOPPED = 2
+    AVOIDING_WALLS_COOLDOWN = 2,
+    STOPPED = 3
 class Robot:
     odometry = Odometry()
     path_follower = None
-    angle_PID = PID(1,0,0)
     kalman = None
     state = RobotState.FOLLOWING_PATH
     state_timer = 0
 
 
-    def __init__(self, x = 0, y = 0, angle = 0, path = [(0,0),(0,1)]):
+    def __init__(self, x = 0, y = 0, angle = 0, path = [(0,0),(2,0)]):
         self.odometry = Odometry(x,y,angle)
         self.path_follower = PathFollow(path)
         self.kalman = Kalman([x,y],angle,[0,0],[0,0],0,get_time())
@@ -43,10 +44,10 @@ def motors(left, right):
         "motor.right.target": [right],
     }
 def change_acceleration(acc):
-    return acc*9.81/21.0
+    return acc*ACCELERATION_SENSOR_TO_MPSS
 
 def change_velocity(vel):
-    vel = 0.0003175*vel
+    vel = MOTOR_SENSOR_TO_MPS*vel
     return vel
 
 ### ---- ROBOT CODE ---- ###
@@ -55,11 +56,9 @@ def change_velocity(vel):
 def steer(node, robot ,point):
     angle = get_angle_to(robot.odometry,point)
     
-    #print("TARGET: {:.2f}, ROBOT: {:.2f}, {:.2f} angle - {:.2f}".format(shared.robot.path_follower.current_edge,shared.robot.odometry.x,shared.robot.odometry.y,math.degrees(shared.robot.odometry.angle)))
     # SPEED CONSTANTS
-    forward_speed = 250
-    steer_gain = 150
-    steer_max = 70
+    forward_speed = ROBOT_FOLLOW_FORWARD_SPEED
+    steer_gain = ROBOT_FOLLOW_STEER_AMOUNT
 
     steer = steer_gain * angle
     
@@ -67,13 +66,25 @@ def steer(node, robot ,point):
 def steer_danger(node,robot):
     prox = node.v.prox.horizontal
     # STEER CONSTANTS
-    speed = 200
-    obst_gain = 12
-    obst_rescind = 4
-    obst_stop = 15
+    speed = ROBOT_AVOID_FORWARD_SPEED
+    obst_gain = ROBOT_AVOID_SENSOR_GAIN
+    obst_rescind = ROBOT_AVOID_SENSOR_RESCIND
+    obst_stop = ROBOT_AVOID_SENSOR_STOP
 
-    back = (prox[2]//100) * obst_stop
-    node.send_set_variables(motors(speed + obst_gain * (prox[0] // 100) - back - obst_rescind * (prox[4]//100),speed + obst_gain * (prox[4] // 100) - back - obst_rescind * (prox[0]//100)))
+    lprox, mprox, rprox = get_proximity_sides(prox)
+    lprox, mprox, rprox = lprox//100, mprox//100, rprox//100
+    
+    back = mprox * obst_stop
+
+    lspeed = int(speed + obst_gain * lprox - back - obst_rescind * rprox)
+    rspeed = int(speed + obst_gain * rprox - back - obst_rescind * lprox)
+    node.send_set_variables(motors(lspeed,rspeed))
+
+def get_proximity_sides(prox):
+    left = prox[0]*PROXIMITIY_SMOOTHING + prox[1]*(1-PROXIMITIY_SMOOTHING)
+    mid = prox[2]*PROXIMITIY_SMOOTHING + prox[1]*(1-PROXIMITIY_SMOOTHING)/2 + prox[3]*(1-PROXIMITIY_SMOOTHING)/2
+    right = prox[4]*PROXIMITIY_SMOOTHING + prox[3]*(1-PROXIMITIY_SMOOTHING)
+    return left, mid, right
 
 # Async sensor reading update
 def on_variables_changed(node, variables):
@@ -81,22 +92,21 @@ def on_variables_changed(node, variables):
     try:
         #Proximity has been updated
         prox = variables["prox.horizontal"]
+
+        lprox, mprox, rprox = get_proximity_sides(prox)
         # PROXIMITY CONSTANTS
-        obstL = 10
-        obstH = 20
-        STATE_COOLDOWN = 4
+        obstL = PROX_DANGER_MIN
+        obstH = PROX_DANGER_MAX
+        
        # print(prox[0],prox[4],state,state_timer)
         # handle states
-        if(prox[0] > obstH or prox[4] > obstH):
-            if(shared.robot.state == RobotState.AVOIDING_WALLS):
-                shared.robot.state_timer = STATE_COOLDOWN
+        if(lprox > obstH or rprox > obstH):
             shared.robot.state = RobotState.AVOIDING_WALLS
         
-        elif(prox[0] < obstL and prox[4] < obstL):
-            if(shared.robot.state == RobotState.FOLLOWING_PATH):
+        elif(lprox < obstL and rprox < obstL):
+            if(shared.robot.state == RobotState.AVOIDING_WALLS):
                 shared.robot.state_timer = STATE_COOLDOWN
-            if(shared.robot.state_timer <= 0):
-                shared.robot.state = RobotState.FOLLOWING_PATH
+                shared.robot.state = RobotState.AVOIDING_WALLS_COOLDOWN
 
         
 
@@ -114,15 +124,10 @@ def on_variables_changed(node, variables):
             right_speed = 0
             if(left_speed == 0):
                 raise KeyError  #if neither was updated, skip
-        #ODOMETRY CONSTANTS
-        ROBOT_DIAMETER = 0.25
-        ENCODER_TO_MPS = 0.01
-        MOTOR_READ_FREQ = 10
-        constant_spin = 2*math.pi/(4.6*400)
+
         #Update Odometry:
-        dtheta = (right_speed - left_speed)*constant_spin
-        #dtheta = 2*math.pi/(4.6*(right_speed - left_speed))
-        #2*pi/4.6 = (400)*x 
+        dtheta = (right_speed - left_speed)*MOTOR_SENSOR_TO_SPINS
+        
         shared.robot.kalman.update_spin(data=dtheta,time=get_time())
         
 

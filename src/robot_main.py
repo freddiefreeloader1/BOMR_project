@@ -1,6 +1,6 @@
 from tdmclient import ClientAsync, aw
-from robot import *
-from common import Quit, SharedData, shared, convert_camera_to_robot
+from robot_drive.robot import *
+from util.common import Quit, SharedData, shared, convert_camera_to_robot
 
 import math
 
@@ -30,17 +30,16 @@ def RobotLoop(shared):
 
     # path follow loop:
     point, _ = shared.robot.path_follower.getLookaheadEdge(shared.robot.odometry)
-    print(shared.robot.state, shared.robot.state_timer)
     shared.path_shared.append(point)
     if(shared.robot.state == RobotState.FOLLOWING_PATH):
         steer(node, shared.robot, point)
-    elif(shared.robot.state == RobotState.AVOIDING_WALLS):
+    elif(shared.robot.state == RobotState.AVOIDING_WALLS or shared.robot.state == RobotState.AVOIDING_WALLS_COOLDOWN):
         steer_danger(node,shared.robot)
     elif(shared.robot.state == RobotState.STOPPED):
         node.send_set_variables(motors(0,0))
     shared.robot.state_timer -= 1
-    if(shared.robot.state_timer < 0 and shared.robot.state != RobotState.STOPPED):
-        shared.robot.state == RobotState.FOLLOWING_PATH
+    if(shared.robot.state_timer < 0 and shared.robot.state == RobotState.AVOIDING_WALLS_COOLDOWN):
+        shared.robot.state = RobotState.FOLLOWING_PATH
         steer(node, shared.robot, point)
     
     if(shared.robot.path_follower.current_edge >= len(shared.robot.path_follower.path)-1):

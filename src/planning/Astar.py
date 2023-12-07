@@ -3,7 +3,7 @@ import heapq
 import timeit
 import cv2
 import matplotlib.pyplot as plt
-from computer_vision import * 
+from vision.computer_vision import * 
 import numpy as np
 import random
 
@@ -97,7 +97,7 @@ def astar_grid(maze, start, end, moves, map_copy):
 
     open_list = []
     closed_set = set()
-    visited_positions = set()  # Maintain a set of visited positions
+    visited_positions = set()
 
     heapq.heappush(open_list, start_node)
     visited_positions.add(start)
@@ -145,8 +145,8 @@ def astar_grid(maze, start, end, moves, map_copy):
 
             child.cost_of_move = current_node.cost_of_move + 1.41 if dx != 0 and dy != 0 else current_node.cost_of_move + 1
 
-            child.heuristic = abs(child.position[0] - end_node.position[0]) \
-                              + abs(child.position[1] - end_node.position[1])
+            child.heuristic = np.sqrt(abs(child.position[0] - end_node.position[0])**2 \
+                              + abs(child.position[1] - end_node.position[1])**2)
 
             child.total_cost = child.cost_of_move + child.heuristic
 
