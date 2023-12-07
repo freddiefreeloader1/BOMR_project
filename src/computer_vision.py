@@ -87,7 +87,7 @@ def capture_obstacle_data(map_img):
         obstacle_masks: a list of masks representing the obstacles
     """
     map_img_copy = map_img.copy()
-    map_img_copy = cv2.GaussianBlur(map_img_copy, (5, 5), 0)
+    map_img_copy = cv2.GaussianBlur(map_img_copy, (15, 15), 0)
     hsv_map_img = cv2.cvtColor(map_img_copy, cv2.COLOR_BGR2HSV)
 
     lower_green = np.array([41, 60, 0])
@@ -189,6 +189,18 @@ def create_grid(map_img, obstacle_masks, cell_size, metric_padding):
                     row_p = max(row - padding, 0)
                     col_p = max(col - padding, 0)
                     grid[row_p][col_p] = 1
+
+                    row_p = min(row + padding, grid_rows - 1)
+                    grid[row_p][col] = 1
+
+                    row_p = max(row - padding, 0)
+                    grid[row_p][col] = 1
+
+                    col_p = max(col - padding, 0)
+                    grid[row][col_p] = 1
+
+                    col_p = min(col + padding, grid_cols - 1)
+                    grid[row][col_p] = 1
 
             except IndexError:
                 pass

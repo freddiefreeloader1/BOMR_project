@@ -37,7 +37,7 @@ start_grid = ()
 end_grid = ()
 grid = np.array([])
 path_grid = np.array([])
-metric_padding = 80
+metric_padding = 70
 
 start = None # Path for local navigation
 end = None # Path for local navigation
